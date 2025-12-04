@@ -1,0 +1,60 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Post {
+  id        Int      @id @default(autoincrement())
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([name])
+}
+
+// Simulated Assets for "Grow" Loop (Epic 4)
+// Stores user's mock investments in stocks/crypto
+model SimulatedAsset {
+  id              String   @id @default(cuid())
+  userId          String // Links to Supabase user ID
+  walletAddress   String // Links to wallet address
+  symbol          String // e.g., "sTSLA", "sAAPL", "sBTC"
+  amount          Float // Quantity of the asset (e.g., 0.5 shares)
+  averageBuyPrice Float // Average price paid per unit
+  totalInvested   Float // Total USDC spent on this asset
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([userId])
+  @@index([walletAddress])
+  @@index([symbol])
+}
+
+// Transaction History (for merging real + simulated transactions)
+model Transaction {
+  id             String   @id @default(cuid())
+  userId         String // Links to Supabase user ID
+  walletAddress  String // Wallet address involved
+  type           String // "payroll", "investment", "bill_pay", "transfer"
+  amount         Float // Amount in USDC
+  symbol         String? // Asset symbol if applicable (e.g., "sTSLA")
+  status         String // "pending", "confirmed", "failed"
+  description    String? // Human-readable description
+  metadata       String? // JSON string for extra data
+  privacySetting String   @default("public") // "public" or "private" (Epic 6: Story 6.2)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([userId])
+  @@index([walletAddress])
+  @@index([type])
+  @@index([status])
+}
