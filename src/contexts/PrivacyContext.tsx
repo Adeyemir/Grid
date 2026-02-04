@@ -18,16 +18,18 @@ export function PrivacyProvider({ children }: { children: ReactNode }) {
 
   // Load privacy setting from localStorage on mount
   useEffect(() => {
-    const stored = localStorage.getItem(PRIVACY_STORAGE_KEY);
-    if (stored !== null) {
-      setIsPrivacyMode(stored === "true");
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem(PRIVACY_STORAGE_KEY);
+      if (stored !== null) {
+        setIsPrivacyMode(stored === "true");
+      }
     }
     setIsHydrated(true);
   }, []);
 
   // Save privacy setting to localStorage when it changes
   useEffect(() => {
-    if (isHydrated) {
+    if (isHydrated && typeof window !== "undefined") {
       localStorage.setItem(PRIVACY_STORAGE_KEY, String(isPrivacyMode));
     }
   }, [isPrivacyMode, isHydrated]);

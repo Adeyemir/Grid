@@ -6,7 +6,6 @@ import { Toaster } from "sonner";
 
 import { TRPCReactProvider } from "~/trpc/react";
 import { WalletProvider } from "~/lib/wallet/WalletProvider";
-import { RainbowKitProvider } from "~/lib/wagmi/RainbowKitProvider";
 import { PrivacyProvider } from "~/contexts/PrivacyContext";
 
 export const metadata: Metadata = {
@@ -27,14 +26,12 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${inter.variable}`}>
       <body className="font-sans antialiased bg-slate-50 text-slate-900">
-        <RainbowKitProvider>
-          <TRPCReactProvider>
-            <PrivacyProvider>
-              <WalletProvider>{children}</WalletProvider>
-              <Toaster position="top-center" richColors />
-            </PrivacyProvider>
-          </TRPCReactProvider>
-        </RainbowKitProvider>
+        <TRPCReactProvider>
+          <PrivacyProvider>
+            <WalletProvider>{children}</WalletProvider>
+            <Toaster position="top-center" richColors />
+          </PrivacyProvider>
+        </TRPCReactProvider>
       </body>
     </html>
   );

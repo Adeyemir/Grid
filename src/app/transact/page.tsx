@@ -112,10 +112,14 @@ export default function TransactPage() {
       toast.success("Transfer successful!", {
         description: `Sent $${data.amount.toFixed(2)} USDC`,
       });
-      setRecipient("");
-      setAmount("");
-      setNote("");
-      setResolvedAddress(null);
+      // Clear all form states
+      setGridUsername("");
+      setGridAmount("");
+      setGridNote("");
+      setResolvedGridUser(null);
+      setExternalAddress("");
+      setExternalAmount("");
+      setExternalNote("");
       void refetchBalance();
     },
     onError: (error) => {

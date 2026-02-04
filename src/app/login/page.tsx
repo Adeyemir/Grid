@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { Button } from "~/components/ui/button";
 import {
   Card,
@@ -11,16 +10,12 @@ import {
   CardTitle,
 } from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
-import { useWeb3Auth } from "~/hooks/useWeb3Auth";
 import { signInWithGoogle, signInWithEmail, signUpWithEmail } from "./actions";
 
 export default function LoginPage() {
   const [isSignUp, setIsSignUp] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-
-  // Web3 wallet authentication
-  const { isAuthenticating, error: web3Error } = useWeb3Auth();
 
   async function handleEmailSubmit(formData: FormData) {
     setError(null);
@@ -184,138 +179,6 @@ export default function LoginPage() {
                   ? "Already have an account? Sign in"
                   : "Don't have an account? Sign up"}
               </button>
-            </div>
-
-            {/* Web3 Wallet Divider */}
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t border-slate-200" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-white px-2 text-slate-500">Or connect wallet</span>
-              </div>
-            </div>
-
-            {/* Web3 Auth Status */}
-            {web3Error && (
-              <div className="p-3 rounded-xl bg-rose-50 border border-rose-200">
-                <p className="text-sm text-rose-600">{web3Error}</p>
-              </div>
-            )}
-
-            {isAuthenticating && (
-              <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200">
-                <div className="flex items-center gap-2 text-sm text-emerald-600">
-                  <svg
-                    className="animate-spin h-4 w-4"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                  >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                    ></circle>
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    ></path>
-                  </svg>
-                  <span>Authenticating with your wallet...</span>
-                </div>
-              </div>
-            )}
-
-            {/* Connect Wallet Button */}
-            <div className="flex justify-center">
-              <ConnectButton.Custom>
-                {({
-                  account,
-                  chain,
-                  openAccountModal,
-                  openChainModal,
-                  openConnectModal,
-                  mounted,
-                }) => {
-                  const ready = mounted;
-                  const connected = ready && account && chain;
-
-                  return (
-                    <div
-                      {...(!ready && {
-                        "aria-hidden": true,
-                        style: {
-                          opacity: 0,
-                          pointerEvents: "none",
-                          userSelect: "none",
-                        },
-                      })}
-                      className="w-full"
-                    >
-                      {(() => {
-                        if (!connected) {
-                          return (
-                            <Button
-                              onClick={openConnectModal}
-                              type="button"
-                              variant="outline"
-                              className="w-full border-emerald-600 text-emerald-600 hover:bg-emerald-50 py-6 rounded-xl font-semibold"
-                            >
-                              <svg
-                                className="mr-2 h-5 w-5"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"
-                                />
-                              </svg>
-                              Connect Wallet
-                            </Button>
-                          );
-                        }
-
-                        return (
-                          <div className="flex gap-2">
-                            <Button
-                              onClick={openChainModal}
-                              type="button"
-                              variant="outline"
-                              className="rounded-xl"
-                            >
-                              {chain.hasIcon && chain.iconUrl && (
-                                <img
-                                  alt={chain.name ?? "Chain icon"}
-                                  src={chain.iconUrl}
-                                  className="w-5 h-5 mr-2"
-                                />
-                              )}
-                              {chain.name}
-                            </Button>
-
-                            <Button
-                              onClick={openAccountModal}
-                              type="button"
-                              className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl"
-                            >
-                              {account.displayName}
-                            </Button>
-                          </div>
-                        );
-                      })()}
-                    </div>
-                  );
-                }}
-              </ConnectButton.Custom>
             </div>
           </CardContent>
         </Card>

@@ -26,16 +26,12 @@ export default function DashboardPage() {
   const { isPrivacyMode, togglePrivacy, maskValue } = usePrivacy();
   const [user, setUser] = useState<{
     email: string;
-    authMethod: string;
-    web3Address?: string;
   } | null>(null);
   const [loading, setLoading] = useState(true);
   const { walletAddress, isCreating, error } = useCreateWallet();
 
-  // Determine which wallet address to display
-  const displayWalletAddress = user?.authMethod === "wallet"
-    ? user.web3Address
-    : walletAddress;
+  // Use the Grid wallet address
+  const displayWalletAddress = walletAddress;
 
   // Fetch wallet balance with auto-polling
   // Use displayWalletAddress to support both Circle and Web3 wallets
@@ -66,14 +62,8 @@ export default function DashboardPage() {
         return;
       }
 
-      // Check if user logged in via Web3 wallet
-      const authMethod = user.user_metadata?.auth_method as string | undefined;
-      const web3WalletAddress = user.user_metadata?.wallet_address as string | undefined;
-
       setUser({
         email: user.email ?? "",
-        authMethod: authMethod ?? "email",
-        web3Address: web3WalletAddress,
       });
       setLoading(false);
     }
@@ -174,7 +164,7 @@ export default function DashboardPage() {
               {/* Greeting */}
               <div>
                 <h2 className="text-2xl font-bold text-slate-900">
-                  Hi, {user?.email ? user.email.split("@")[0].toUpperCase() : "USER"}
+                  Hi, {user?.email ? user.email.split("@")[0]?.toUpperCase() : "USER"}
                 </h2>
                 <p className="text-sm text-slate-500">Welcome back to Grid</p>
               </div>
@@ -268,7 +258,7 @@ export default function DashboardPage() {
 
 
           {/* Quick Actions */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <Card
               className="bg-white border-emerald-200 rounded-xl hover:shadow-md transition-shadow cursor-pointer"
               onClick={() => router.push("/transact")}
@@ -370,33 +360,6 @@ export default function DashboardPage() {
               </CardContent>
             </Card>
 
-            <Card
-              className="bg-white border-violet-200 rounded-xl hover:shadow-md transition-shadow cursor-pointer"
-              onClick={() => router.push("/portfolio")}
-            >
-              <CardHeader>
-                <CardTitle className="text-lg text-violet-600 flex items-center gap-2">
-                  Portfolio
-                  <svg
-                    className="w-4 h-4"
-                    fill="none"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path d="M9 5l7 7-7 7"></path>
-                  </svg>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-slate-600">Multi-chain wallet view</p>
-                <p className="text-xs text-violet-600 font-medium mt-2">
-                  View balances →
-                </p>
-              </CardContent>
-            </Card>
           </div>
         </div>
       </div>
