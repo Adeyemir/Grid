@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { Suspense, useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { Button } from "~/components/ui/button";
 import {
@@ -13,7 +13,8 @@ import {
 import { Input } from "~/components/ui/input";
 import { signInWithGoogle, signInWithEmail, signUpWithEmail } from "./actions";
 
-export default function LoginPage() {
+// Separate component that uses useSearchParams
+function LoginForm() {
   const searchParams = useSearchParams();
   const [isSignUp, setIsSignUp] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -205,5 +206,39 @@ export default function LoginPage() {
         </p>
       </div>
     </main>
+  );
+}
+
+// Loading fallback component
+function LoginLoading() {
+  return (
+    <main className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+      <div className="w-full max-w-md">
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold tracking-tight text-slate-900 mb-2">
+            Welcome to <span className="text-emerald-600">Grid</span>
+          </h1>
+          <p className="text-slate-500">
+            The Income Operating System for the Global Workforce
+          </p>
+        </div>
+        <Card className="bg-white border-slate-200 rounded-xl shadow-lg">
+          <CardContent className="p-8">
+            <div className="flex items-center justify-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </main>
+  );
+}
+
+// Main page component with Suspense boundary
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<LoginLoading />}>
+      <LoginForm />
+    </Suspense>
   );
 }
