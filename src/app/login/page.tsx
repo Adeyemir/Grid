@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { Button } from "~/components/ui/button";
 import {
   Card,
@@ -13,9 +14,24 @@ import { Input } from "~/components/ui/input";
 import { signInWithGoogle, signInWithEmail, signUpWithEmail } from "./actions";
 
 export default function LoginPage() {
+  const searchParams = useSearchParams();
   const [isSignUp, setIsSignUp] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+
+  // Check for OAuth callback errors on mount
+  useEffect(() => {
+    const errorParam = searchParams.get("error");
+    const messageParam = searchParams.get("message");
+
+    if (errorParam) {
+      if (errorParam === "auth_failed") {
+        setError(messageParam ? decodeURIComponent(messageParam) : "Authentication failed. Please try again.");
+      } else if (errorParam === "missing_code") {
+        setError("Authentication code missing. Please try signing in again.");
+      }
+    }
+  }, [searchParams]);
 
   async function handleEmailSubmit(formData: FormData) {
     setError(null);
