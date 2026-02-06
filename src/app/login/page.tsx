@@ -61,7 +61,7 @@ function LoginForm() {
         setError(result.error);
       }
     } catch (err) {
-      setError("An unexpected error occurred");
+      //setError("An unexpected error occurred");
     }
   }
 
