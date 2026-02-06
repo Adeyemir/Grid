@@ -79,8 +79,8 @@ export function MobileNav() {
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 sm:hidden z-50">
-      <div className="grid grid-cols-4 h-16">
+    <nav className="fixed bottom-0 left-0 right-0 w-full bg-white border-t border-slate-200 sm:hidden z-50 max-w-full">
+      <div className="grid grid-cols-4 h-16 w-full">
         {navItems.map((item) => {
           const isActive = pathname === item.href;
           return (
