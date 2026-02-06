@@ -255,8 +255,8 @@ export default function TransactPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-slate-50">
-        <div className="container mx-auto px-4 py-16">
+      <main className="min-h-screen w-full bg-slate-50 overflow-x-hidden">
+        <div className="container mx-auto px-4 py-16 max-w-full">
           <Skeleton className="h-12 w-64 mb-8" />
           <Skeleton className="h-96 w-full" />
         </div>
@@ -265,18 +265,18 @@ export default function TransactPage() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-50 pb-20 sm:pb-0">
+    <main className="min-h-screen w-full bg-slate-50 pb-20 sm:pb-0 overflow-x-hidden">
       {/* Header */}
-      <div className="bg-white border-b border-slate-200">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+      <div className="bg-white border-b border-slate-200 w-full">
+        <div className="container mx-auto px-4 py-4 max-w-full">
+          <div className="flex items-center justify-between gap-2">
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 truncate">
               <span className="text-emerald-600">Grid</span> Transact
             </h1>
             <Button
               variant="outline"
               onClick={() => router.push("/dashboard")}
-              className="border-slate-300 hover:bg-slate-50 rounded-xl"
+              className="border-slate-300 hover:bg-slate-50 rounded-lg sm:rounded-xl text-xs sm:text-sm px-2 sm:px-4 whitespace-nowrap flex-shrink-0"
             >
               Back to Dashboard
             </Button>
@@ -285,20 +285,20 @@ export default function TransactPage() {
       </div>
 
       {/* Content */}
-      <div className="container mx-auto px-4 py-16">
-        <div className="max-w-4xl mx-auto space-y-8">
+      <div className="container mx-auto px-4 py-8 sm:py-16 max-w-full">
+        <div className="max-w-4xl mx-auto space-y-6 sm:space-y-8 w-full">
           {/* Balance Card */}
-          <Card className="bg-gradient-to-br from-emerald-50 to-white border-emerald-200 rounded-xl shadow-lg">
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
+          <Card className="bg-gradient-to-br from-emerald-50 to-white border-emerald-200 rounded-xl shadow-lg w-full max-w-full overflow-hidden">
+            <CardContent className="pt-6 px-4 sm:px-6">
+              <div className="flex items-center justify-between gap-4">
+                <div className="min-w-0 flex-1">
                   <p className="text-sm text-slate-500">Available Balance</p>
-                  <p className="text-3xl font-bold text-slate-900">
+                  <p className="text-2xl sm:text-3xl font-bold text-slate-900 break-words">
                     ${(balanceData?.balance ?? 0).toFixed(2)} USDC
                   </p>
                 </div>
                 <svg
-                  className="w-12 h-12 text-emerald-600"
+                  className="w-10 h-10 sm:w-12 sm:h-12 text-emerald-600 flex-shrink-0"
                   fill="none"
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -313,8 +313,8 @@ export default function TransactPage() {
           </Card>
 
           {/* Tabs */}
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2 bg-slate-100 p-1 rounded-xl">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full max-w-full">
+            <TabsList className="grid w-full grid-cols-2 bg-slate-100 p-1 rounded-xl max-w-full">
               <TabsTrigger
                 value="receive"
                 className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-emerald-600 data-[state=active]:shadow-sm"
@@ -330,12 +330,12 @@ export default function TransactPage() {
             </TabsList>
 
             {/* Receive Tab */}
-            <TabsContent value="receive" className="space-y-6 mt-6">
+            <TabsContent value="receive" className="space-y-4 sm:space-y-6 mt-6 w-full">
               {/* 1. Stablecoin Section */}
-              <Card className="bg-gradient-to-br from-emerald-50 to-white border-emerald-200 rounded-xl shadow-sm">
-                <CardHeader>
+              <Card className="bg-gradient-to-br from-emerald-50 to-white border-emerald-200 rounded-xl shadow-sm w-full max-w-full overflow-hidden">
+                <CardHeader className="px-4 sm:px-6">
                   <div className="flex items-center gap-2">
-                    <div className="w-10 h-10 bg-emerald-600 rounded-full flex items-center justify-center">
+                    <div className="w-10 h-10 bg-emerald-600 rounded-full flex items-center justify-center flex-shrink-0">
                       <svg
                         className="w-6 h-6 text-white"
                         fill="none"
@@ -348,15 +348,15 @@ export default function TransactPage() {
                         <path d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                       </svg>
                     </div>
-                    <div>
-                      <CardTitle className="text-slate-900">Receive USDC</CardTitle>
-                      <CardDescription className="text-slate-600">
+                    <div className="min-w-0 flex-1">
+                      <CardTitle className="text-slate-900 text-base sm:text-lg">Receive USDC</CardTitle>
+                      <CardDescription className="text-slate-600 text-sm">
                         Receive stablecoins from any crypto wallet
                       </CardDescription>
                     </div>
                   </div>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-4 px-4 sm:px-6">
                   {/* QR Code */}
                   <div className="flex justify-center p-6 bg-white rounded-xl border border-emerald-100">
                     {displayWalletAddress && (
@@ -400,10 +400,10 @@ export default function TransactPage() {
               </Card>
 
               {/* 2. Local Currency Section */}
-              <Card className="bg-gradient-to-br from-blue-50 to-white border-blue-200 rounded-xl shadow-sm">
-                <CardHeader>
+              <Card className="bg-gradient-to-br from-blue-50 to-white border-blue-200 rounded-xl shadow-sm w-full max-w-full overflow-hidden">
+                <CardHeader className="px-4 sm:px-6">
                   <div className="flex items-center gap-2">
-                    <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
+                    <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
                       <svg
                         className="w-6 h-6 text-white"
                         fill="none"
@@ -416,22 +416,22 @@ export default function TransactPage() {
                         <path d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
                       </svg>
                     </div>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <CardTitle className="text-slate-900">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <CardTitle className="text-slate-900 text-base sm:text-lg">
                           Receive Naira (NGN)
                         </CardTitle>
                         <span className="px-2 py-0.5 bg-amber-100 text-amber-700 text-xs rounded-full font-medium">
                           Coming Soon
                         </span>
                       </div>
-                      <CardDescription className="text-slate-600">
+                      <CardDescription className="text-slate-600 text-sm">
                         Receive fiat via local bank transfer
                       </CardDescription>
                     </div>
                   </div>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-4 px-4 sm:px-6">
                   <div className="bg-white p-4 rounded-xl border border-blue-200 space-y-3">
                     <div className="flex items-center justify-between py-2 border-b border-slate-100">
                       <span className="text-sm text-slate-500">Bank Name</span>
@@ -464,8 +464,8 @@ export default function TransactPage() {
                       </div>
                     </div>
                     <div className="flex items-center justify-between py-2">
-                      <span className="text-sm text-slate-500">Account Name</span>
-                      <span className="text-sm font-semibold text-slate-900">
+                      <span className="text-sm text-slate-500 flex-shrink-0">Account Name</span>
+                      <span className="text-sm font-semibold text-slate-900 break-all text-right ml-2">
                         {user?.email}
                       </span>
                     </div>
@@ -479,7 +479,7 @@ export default function TransactPage() {
               </Card>
 
               {/* 3. Grid Username Section */}
-              <Card className="bg-gradient-to-br from-violet-50 to-white border-violet-200 rounded-xl shadow-sm">
+              <Card className="bg-gradient-to-br from-violet-50 to-white border-violet-200 rounded-xl shadow-sm w-full max-w-full overflow-hidden">
                 <CardHeader>
                   <div className="flex items-center gap-2">
                     <div className="w-10 h-10 bg-violet-600 rounded-full flex items-center justify-center">
@@ -495,20 +495,20 @@ export default function TransactPage() {
                         <path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
                       </svg>
                     </div>
-                    <div>
-                      <CardTitle className="text-slate-900">
+                    <div className="min-w-0 flex-1">
+                      <CardTitle className="text-slate-900 text-base sm:text-lg">
                         Receive from Grid Users
                       </CardTitle>
-                      <CardDescription className="text-slate-600">
+                      <CardDescription className="text-slate-600 text-sm">
                         Share your username to receive instantly
                       </CardDescription>
                     </div>
                   </div>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="bg-white p-6 rounded-xl border border-violet-200 text-center">
+                <CardContent className="space-y-4 px-4 sm:px-6">
+                  <div className="bg-white p-4 sm:p-6 rounded-xl border border-violet-200 text-center">
                     <p className="text-sm text-slate-500 mb-2">Your Grid Username</p>
-                    <p className="text-4xl font-bold text-violet-600 mb-4">
+                    <p className="text-2xl sm:text-3xl md:text-4xl font-bold text-violet-600 mb-4 break-all px-2">
                       @{username}
                     </p>
                     <p className="text-xs text-slate-600 mb-4">
@@ -612,12 +612,12 @@ export default function TransactPage() {
             </TabsContent>
 
             {/* Send Tab */}
-            <TabsContent value="send" className="space-y-6 mt-6">
+            <TabsContent value="send" className="space-y-4 sm:space-y-6 mt-6 w-full">
               {/* 1. Send to Grid User (PRIMARY) */}
-              <Card className="bg-gradient-to-br from-violet-50 to-white border-violet-200 rounded-xl shadow-sm">
-                <CardHeader>
+              <Card className="bg-gradient-to-br from-violet-50 to-white border-violet-200 rounded-xl shadow-sm w-full max-w-full overflow-hidden">
+                <CardHeader className="px-4 sm:px-6">
                   <div className="flex items-center gap-2">
-                    <div className="w-10 h-10 bg-violet-600 rounded-full flex items-center justify-center">
+                    <div className="w-10 h-10 bg-violet-600 rounded-full flex items-center justify-center flex-shrink-0">
                       <svg
                         className="w-6 h-6 text-white"
                         fill="none"
@@ -630,15 +630,15 @@ export default function TransactPage() {
                         <path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
                       </svg>
                     </div>
-                    <div>
-                      <CardTitle className="text-slate-900">Send to Grid User</CardTitle>
-                      <CardDescription className="text-slate-600">
+                    <div className="min-w-0 flex-1">
+                      <CardTitle className="text-slate-900 text-base sm:text-lg">Send to Grid User</CardTitle>
+                      <CardDescription className="text-slate-600 text-sm">
                         Instant free transfers to other Grid users
                       </CardDescription>
                     </div>
                   </div>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-4 px-4 sm:px-6">
                   {/* Username Input */}
                   <div>
                     <label
@@ -770,10 +770,10 @@ export default function TransactPage() {
               </Card>
 
               {/* 2. Send to External Wallet */}
-              <Card className="bg-gradient-to-br from-emerald-50 to-white border-emerald-200 rounded-xl shadow-sm">
-                <CardHeader>
+              <Card className="bg-gradient-to-br from-emerald-50 to-white border-emerald-200 rounded-xl shadow-sm w-full max-w-full overflow-hidden">
+                <CardHeader className="px-4 sm:px-6">
                   <div className="flex items-center gap-2">
-                    <div className="w-10 h-10 bg-emerald-600 rounded-full flex items-center justify-center">
+                    <div className="w-10 h-10 bg-emerald-600 rounded-full flex items-center justify-center flex-shrink-0">
                       <svg
                         className="w-6 h-6 text-white"
                         fill="none"
@@ -786,17 +786,17 @@ export default function TransactPage() {
                         <path d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                       </svg>
                     </div>
-                    <div>
-                      <CardTitle className="text-slate-900">
+                    <div className="min-w-0 flex-1">
+                      <CardTitle className="text-slate-900 text-base sm:text-lg">
                         Send to External Wallet
                       </CardTitle>
-                      <CardDescription className="text-slate-600">
+                      <CardDescription className="text-slate-600 text-sm">
                         Send USDC to any crypto wallet address
                       </CardDescription>
                     </div>
                   </div>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-4 px-4 sm:px-6">
                   {/* Wallet Address Input */}
                   <div>
                     <label
@@ -932,7 +932,7 @@ export default function TransactPage() {
               </Card>
 
               {/* 3. Send to Bank Account (Coming Soon) */}
-              <Card className="bg-gradient-to-br from-blue-50 to-white border-blue-200 rounded-xl shadow-sm relative overflow-hidden">
+              <Card className="bg-gradient-to-br from-blue-50 to-white border-blue-200 rounded-xl shadow-sm relative overflow-hidden w-full max-w-full">
                 {/* Coming Soon Overlay */}
                 <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-10 flex items-center justify-center">
                   <div className="text-center">
@@ -945,9 +945,9 @@ export default function TransactPage() {
                   </div>
                 </div>
 
-                <CardHeader>
+                <CardHeader className="px-4 sm:px-6">
                   <div className="flex items-center gap-2">
-                    <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
+                    <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
                       <svg
                         className="w-6 h-6 text-white"
                         fill="none"
@@ -960,17 +960,17 @@ export default function TransactPage() {
                         <path d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
                       </svg>
                     </div>
-                    <div>
-                      <CardTitle className="text-slate-900">
+                    <div className="min-w-0 flex-1">
+                      <CardTitle className="text-slate-900 text-base sm:text-lg">
                         Send to Bank (NGN)
                       </CardTitle>
-                      <CardDescription className="text-slate-600">
+                      <CardDescription className="text-slate-600 text-sm">
                         Send funds directly to a Nigerian bank account
                       </CardDescription>
                     </div>
                   </div>
                 </CardHeader>
-                <CardContent className="space-y-4 opacity-50">
+                <CardContent className="space-y-4 opacity-50 px-4 sm:px-6">
                   {/* Bank Name */}
                   <div>
                     <label className="text-sm font-medium text-slate-700 mb-2 block">

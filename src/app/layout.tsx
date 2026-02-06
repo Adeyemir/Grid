@@ -24,8 +24,8 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${inter.variable}`}>
-      <body className="font-sans antialiased bg-slate-50 text-slate-900 overflow-x-hidden">
+    <html lang="en" className={`${inter.variable} overflow-x-hidden`}>
+      <body className="font-sans antialiased bg-slate-50 text-slate-900 overflow-x-hidden max-w-full">
         <TRPCReactProvider>
           <PrivacyProvider>
             <WalletProvider>{children}</WalletProvider>
