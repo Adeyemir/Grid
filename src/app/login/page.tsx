@@ -66,39 +66,39 @@ function LoginForm() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
+    <main className="min-h-screen w-full bg-slate-50 flex items-center justify-center px-4 py-8 overflow-x-hidden">
+      <div className="w-full max-w-md mx-auto">
         {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold tracking-tight text-slate-900 mb-2">
+        <div className="text-center mb-6 sm:mb-8 px-2">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-slate-900 mb-2 break-words">
             Welcome to <span className="text-emerald-600">Grid</span>
           </h1>
-          <p className="text-slate-500">
+          <p className="text-sm sm:text-base text-slate-500 break-words leading-relaxed">
             The Income Operating System for the Global Workforce
           </p>
         </div>
 
         {/* Login Card */}
-        <Card className="bg-white border-slate-200 rounded-xl shadow-lg">
-          <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl font-bold text-slate-900">
+        <Card className="bg-white border-slate-200 rounded-lg sm:rounded-xl shadow-lg w-full">
+          <CardHeader className="space-y-1 px-4 sm:px-6 pt-4 sm:pt-6">
+            <CardTitle className="text-xl sm:text-2xl font-bold text-slate-900">
               {isSignUp ? "Create an account" : "Sign in"}
             </CardTitle>
-            <CardDescription className="text-slate-500">
+            <CardDescription className="text-sm sm:text-base text-slate-500">
               {isSignUp
                 ? "Enter your email to create your Grid account"
                 : "Choose your preferred sign-in method"}
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-4 px-4 sm:px-6 pb-4 sm:pb-6">
             {/* Google Sign In */}
             <Button
               type="button"
               variant="outline"
-              className="w-full border-slate-300 hover:bg-slate-50 py-6 rounded-xl"
+              className="w-full border-slate-300 hover:bg-slate-50 py-5 sm:py-6 rounded-lg sm:rounded-xl text-sm sm:text-base"
               onClick={handleGoogleSignIn}
             >
-              <svg className="mr-2 h-5 w-5" viewBox="0 0 24 24">
+              <svg className="mr-2 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" viewBox="0 0 24 24">
                 <path
                   d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
                   fill="#4285F4"
@@ -116,7 +116,7 @@ function LoginForm() {
                   fill="#EA4335"
                 />
               </svg>
-              Continue with Google
+              <span className="truncate">Continue with Google</span>
             </Button>
 
             {/* Divider */}
@@ -125,14 +125,14 @@ function LoginForm() {
                 <span className="w-full border-t border-slate-200" />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-white px-2 text-slate-500">
+                <span className="bg-white px-2 text-slate-500 whitespace-nowrap">
                   Or continue with email
                 </span>
               </div>
             </div>
 
             {/* Email Form */}
-            <form action={handleEmailSubmit} className="space-y-4">
+            <form action={handleEmailSubmit} className="space-y-3 sm:space-y-4">
               <div className="space-y-2">
                 <label htmlFor="email" className="text-sm font-medium text-slate-700">
                   Email
@@ -143,7 +143,7 @@ function LoginForm() {
                   type="email"
                   placeholder="you@example.com"
                   required
-                  className="rounded-xl border-slate-300 focus:border-emerald-600 focus:ring-emerald-600"
+                  className="rounded-lg sm:rounded-xl border-slate-300 focus:border-emerald-600 focus:ring-emerald-600 w-full text-base"
                 />
               </div>
 
@@ -157,25 +157,25 @@ function LoginForm() {
                   type="password"
                   placeholder="••••••••"
                   required
-                  className="rounded-xl border-slate-300 focus:border-emerald-600 focus:ring-emerald-600"
+                  className="rounded-lg sm:rounded-xl border-slate-300 focus:border-emerald-600 focus:ring-emerald-600 w-full text-base"
                 />
               </div>
 
               {error && (
-                <div className="p-3 rounded-xl bg-rose-50 border border-rose-200">
-                  <p className="text-sm text-rose-600">{error}</p>
+                <div className="p-3 rounded-lg sm:rounded-xl bg-rose-50 border border-rose-200">
+                  <p className="text-sm text-rose-600 break-words">{error}</p>
                 </div>
               )}
 
               {success && (
-                <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200">
-                  <p className="text-sm text-emerald-600">{success}</p>
+                <div className="p-3 rounded-lg sm:rounded-xl bg-emerald-50 border border-emerald-200">
+                  <p className="text-sm text-emerald-600 break-words">{success}</p>
                 </div>
               )}
 
               <Button
                 type="submit"
-                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-6 rounded-xl font-semibold"
+                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-5 sm:py-6 rounded-lg sm:rounded-xl font-semibold text-sm sm:text-base"
               >
                 {isSignUp ? "Create account" : "Sign in"}
               </Button>
@@ -190,7 +190,7 @@ function LoginForm() {
                   setError(null);
                   setSuccess(null);
                 }}
-                className="text-emerald-600 hover:text-emerald-700 font-medium"
+                className="text-emerald-600 hover:text-emerald-700 font-medium break-words"
               >
                 {isSignUp
                   ? "Already have an account? Sign in"
@@ -201,7 +201,7 @@ function LoginForm() {
         </Card>
 
         {/* Footer */}
-        <p className="text-center text-xs text-slate-500 mt-8">
+        <p className="text-center text-xs text-slate-500 mt-6 sm:mt-8 px-4 break-words leading-relaxed">
           By continuing, you agree to Grid&apos;s Terms of Service and Privacy Policy
         </p>
       </div>
@@ -212,18 +212,18 @@ function LoginForm() {
 // Loading fallback component
 function LoginLoading() {
   return (
-    <main className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold tracking-tight text-slate-900 mb-2">
+    <main className="min-h-screen w-full bg-slate-50 flex items-center justify-center px-4 py-8 overflow-x-hidden">
+      <div className="w-full max-w-md mx-auto">
+        <div className="text-center mb-6 sm:mb-8 px-2">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-slate-900 mb-2 break-words">
             Welcome to <span className="text-emerald-600">Grid</span>
           </h1>
-          <p className="text-slate-500">
+          <p className="text-sm sm:text-base text-slate-500 break-words leading-relaxed">
             The Income Operating System for the Global Workforce
           </p>
         </div>
-        <Card className="bg-white border-slate-200 rounded-xl shadow-lg">
-          <CardContent className="p-8">
+        <Card className="bg-white border-slate-200 rounded-lg sm:rounded-xl shadow-lg w-full">
+          <CardContent className="p-6 sm:p-8">
             <div className="flex items-center justify-center">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div>
             </div>
