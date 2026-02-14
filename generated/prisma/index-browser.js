@@ -128,6 +128,17 @@ exports.Prisma.PostScalarFieldEnum = {
   updatedAt: 'updatedAt'
 };
 
+exports.Prisma.UserProfileScalarFieldEnum = {
+  id: 'id',
+  privyUserId: 'privyUserId',
+  username: 'username',
+  displayName: 'displayName',
+  walletAddress: 'walletAddress',
+  avatarUrl: 'avatarUrl',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
 exports.Prisma.SimulatedAssetScalarFieldEnum = {
   id: 'id',
   userId: 'userId',
@@ -173,6 +184,7 @@ exports.Prisma.NullsOrder = {
 
 exports.Prisma.ModelName = {
   Post: 'Post',
+  UserProfile: 'UserProfile',
   SimulatedAsset: 'SimulatedAsset',
   Transaction: 'Transaction'
 };

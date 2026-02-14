@@ -2,6 +2,7 @@ import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import { createClient } from "@supabase/supabase-js";
 import { env } from "~/env";
+import { db } from "~/server/db";
 
 // Simulated balance storage (in production, this would query the blockchain or Circle API)
 const balances = new Map<string, number>();
@@ -99,6 +100,62 @@ export const walletRouter = createTRPCRouter({
       const userTransactions = transactions.get(input.walletAddress) ?? [];
       return {
         transactions: userTransactions,
+        walletAddress: input.walletAddress,
+      };
+    }),
+
+  /**
+   * Get all transactions from database with filtering
+   */
+  getAllTransactions: publicProcedure
+    .input(
+      z.object({
+        walletAddress: z.string(),
+        limit: z.number().min(1).max(100).default(50),
+        type: z.enum(["all", "send", "receive", "investment", "bill_pay", "payroll"]).default("all"),
+      }),
+    )
+    .query(async ({ input }) => {
+      const where: { walletAddress: string; type?: string } = {
+        walletAddress: input.walletAddress,
+      };
+
+      if (input.type !== "all") {
+        where.type = input.type;
+      }
+
+      const dbTransactions = await db.transaction.findMany({
+        where,
+        orderBy: { createdAt: "desc" },
+        take: input.limit,
+      });
+
+      const formattedTransactions = dbTransactions.map((tx) => {
+        let metadata: Record<string, unknown> | null = null;
+        if (tx.metadata) {
+          try {
+            metadata = JSON.parse(tx.metadata) as Record<string, unknown>;
+          } catch {
+            metadata = null;
+          }
+        }
+
+        return {
+          id: tx.id,
+          reference: tx.id.slice(0, 8).toUpperCase(),
+          type: tx.type,
+          amount: tx.amount,
+          symbol: tx.symbol,
+          status: tx.status,
+          description: tx.description,
+          recipient: metadata?.recipient as string | null ?? null,
+          metadata,
+          createdAt: tx.createdAt,
+        };
+      });
+
+      return {
+        transactions: formattedTransactions,
         walletAddress: input.walletAddress,
       };
     }),

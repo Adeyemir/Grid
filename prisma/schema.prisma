@@ -20,6 +20,22 @@ model Post {
     @@index([name])
 }
 
+// User Profile for Privy authentication
+model UserProfile {
+    id            String   @id @default(cuid())
+    privyUserId   String   @unique
+    username      String   @unique
+    displayName   String?
+    walletAddress String?
+    avatarUrl     String?
+    createdAt     DateTime @default(now())
+    updatedAt     DateTime @updatedAt
+
+    @@index([privyUserId])
+    @@index([username])
+    @@index([walletAddress])
+}
+
 // Simulated Assets for "Grow" Loop (Epic 4)
 // Stores user's mock investments in stocks/crypto
 model SimulatedAsset {
