@@ -436,7 +436,7 @@ export default function TransactPage() {
                     <div className="flex items-center justify-between py-2 border-b border-slate-100">
                       <span className="text-sm text-slate-500">Bank Name</span>
                       <span className="text-sm font-semibold text-slate-900">
-                        Arc Bank (Virtual)
+                        Tempo Bank (Virtual)
                       </span>
                     </div>
                     <div className="flex items-center justify-between py-2 border-b border-slate-100">

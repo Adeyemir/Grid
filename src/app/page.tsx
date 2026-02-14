@@ -28,7 +28,7 @@ export default function Home() {
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-slate-600">
-                  Get paid in USDC on the Arc Network. No more 5-10% wire fees or waiting days for your money.
+                  Get paid in USDC on Tempo Network. No more 5-10% wire fees or waiting days for your money.
                 </p>
               </CardContent>
             </Card>
@@ -77,7 +77,7 @@ export default function Home() {
               </Link>
             </div>
             <p className="text-sm text-slate-500 mt-4">
-              Built on the Arc Network · Powered by Circle & Supabase
+              Built on Tempo Network · Powered by Privy
             </p>
           </div>
 

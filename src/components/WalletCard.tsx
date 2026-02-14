@@ -80,7 +80,7 @@ export function WalletCard({
       <CardHeader>
         <CardTitle className="text-slate-900">Total Balance</CardTitle>
         <CardDescription className="text-slate-600">
-          Your {currency} holdings on Arc Network
+          Your {currency} holdings on Tempo Network
         </CardDescription>
       </CardHeader>
       <CardContent>

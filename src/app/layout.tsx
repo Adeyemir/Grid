@@ -5,12 +5,13 @@ import { Inter } from "next/font/google";
 import { Toaster } from "sonner";
 
 import { TRPCReactProvider } from "~/trpc/react";
+import PrivyWrapper from "~/components/PrivyWrapper";
 import { WalletProvider } from "~/lib/wallet/WalletProvider";
 import { PrivacyProvider } from "~/contexts/PrivacyContext";
 
 export const metadata: Metadata = {
   title: "Grid - The Income Operating System",
-  description: "Earn, grow, and spend stablecoins instantly on the Arc Network",
+  description: "Earn, grow, and spend stablecoins instantly on Tempo Network",
   icons: [{ rel: "icon", url: "/favicon.ico" }],
 };
 
@@ -27,10 +28,12 @@ export default function RootLayout({
     <html lang="en" className={`${inter.variable} overflow-x-hidden`}>
       <body className="font-sans antialiased bg-slate-50 text-slate-900 overflow-x-hidden max-w-full">
         <TRPCReactProvider>
-          <PrivacyProvider>
-            <WalletProvider>{children}</WalletProvider>
-            <Toaster position="top-center" richColors />
-          </PrivacyProvider>
+          <PrivyWrapper>
+            <PrivacyProvider>
+              <WalletProvider>{children}</WalletProvider>
+              <Toaster position="top-center" richColors />
+            </PrivacyProvider>
+          </PrivyWrapper>
         </TRPCReactProvider>
       </body>
     </html>

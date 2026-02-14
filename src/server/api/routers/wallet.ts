@@ -34,7 +34,7 @@ export const walletRouter = createTRPCRouter({
   getBalance: publicProcedure
     .input(z.object({ walletAddress: z.string() }))
     .query(async ({ input }) => {
-      // In production, this would query Circle API or Arc blockchain
+      // In production, this would query Circle API or Tempo blockchain
       const balance = balances.get(input.walletAddress) ?? 0;
 
       return {
@@ -49,7 +49,7 @@ export const walletRouter = createTRPCRouter({
    * In production, this would:
    * 1. Call Circle Programmable Wallets API
    * 2. Transfer USDC from Treasury wallet to user wallet
-   * 3. Return the transaction hash from Arc Network
+   * 3. Return the transaction hash from Tempo Network
    */
   simulatePayroll: publicProcedure
     .input(

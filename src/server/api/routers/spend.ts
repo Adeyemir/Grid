@@ -126,7 +126,7 @@ export const spendRouter = createTRPCRouter({
           providerLogo: provider.logo,
           amount: input.amount,
           reference: transaction.id,
-          network: "Arc Network",
+          network: "Tempo Network",
           timestamp: new Date().toISOString(),
           metadata: input.metadata,
         },
