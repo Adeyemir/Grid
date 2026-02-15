@@ -81,17 +81,6 @@ export default function Home() {
             </p>
           </div>
 
-          {/* Tech Stack Badge */}
-          <div className="mt-16 p-6 bg-white rounded-xl border border-slate-200">
-            <p className="text-sm text-slate-500 mb-3 font-semibold">Built with</p>
-            <div className="flex gap-4 flex-wrap justify-center">
-              <span className="px-3 py-1 bg-slate-100 text-slate-700 rounded-md text-sm">Next.js</span>
-              <span className="px-3 py-1 bg-slate-100 text-slate-700 rounded-md text-sm">TypeScript</span>
-              <span className="px-3 py-1 bg-slate-100 text-slate-700 rounded-md text-sm">Tailwind CSS</span>
-              <span className="px-3 py-1 bg-slate-100 text-slate-700 rounded-md text-sm">tRPC</span>
-              <span className="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-md text-sm font-semibold">shadcn/ui</span>
-            </div>
-          </div>
         </div>
       </div>
     </main>
