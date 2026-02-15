@@ -19,58 +19,73 @@ import {
 } from "~/components/ui/dialog";
 import { Input } from "~/components/ui/input";
 import { Skeleton } from "~/components/ui/skeleton";
-import { createClient } from "~/lib/supabase/client";
+import { useGridAuth } from "~/hooks/useGridAuth";
 import { api } from "~/trpc/react";
 import { toast } from "sonner";
 import { MobileNav } from "~/components/MobileNav";
+import { Car, Apple, Bitcoin, Coins, TrendingUp, Search, DollarSign, CheckCircle2, ArrowDownRight, ArrowUpRight, Share2 } from "lucide-react";
+
+// Receipt type for transactions
+interface TransactionReceipt {
+  transactionId: string;
+  reference: string;
+  type: "BUY" | "SELL";
+  asset: string;
+  assetName: string;
+  shares: number;
+  pricePerShare: number;
+  totalCost?: number;
+  totalProceeds?: number;
+  costBasis?: number;
+  profitLoss?: number;
+  network: string;
+  timestamp: string;
+}
+
+// Professional icon mapping for assets
+const AssetIcon = ({ symbol, className }: { symbol: string; className?: string }) => {
+  const iconClass = className ?? "w-8 h-8";
+
+  switch (symbol) {
+    case "sTSLA":
+      return <div className={`${iconClass} rounded-full bg-red-100 flex items-center justify-center`}><Car className="w-5 h-5 text-red-600" /></div>;
+    case "sAAPL":
+      return <div className={`${iconClass} rounded-full bg-slate-100 flex items-center justify-center`}><Apple className="w-5 h-5 text-slate-700" /></div>;
+    case "sBTC":
+      return <div className={`${iconClass} rounded-full bg-orange-100 flex items-center justify-center`}><Bitcoin className="w-5 h-5 text-orange-500" /></div>;
+    case "sETH":
+      return <div className={`${iconClass} rounded-full bg-indigo-100 flex items-center justify-center`}><Coins className="w-5 h-5 text-indigo-600" /></div>;
+    case "sSPY":
+      return <div className={`${iconClass} rounded-full bg-emerald-100 flex items-center justify-center`}><TrendingUp className="w-5 h-5 text-emerald-600" /></div>;
+    case "sGOOG":
+      return <div className={`${iconClass} rounded-full bg-blue-100 flex items-center justify-center`}><Search className="w-5 h-5 text-blue-600" /></div>;
+    default:
+      return <div className={`${iconClass} rounded-full bg-slate-100 flex items-center justify-center`}><DollarSign className="w-5 h-5 text-slate-600" /></div>;
+  }
+};
 
 export default function InvestPage() {
   const router = useRouter();
-  const [user, setUser] = useState<{
-    id: string;
-    email: string;
-    authMethod: string;
-    web3Address?: string;
-  } | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { user, ready, isAuthenticated, walletAddress } = useGridAuth();
   const [selectedAsset, setSelectedAsset] = useState<string | null>(null);
   const [buyAmount, setBuyAmount] = useState("");
+  const [receipt, setReceipt] = useState<TransactionReceipt | null>(null);
+  const [sellAssetSymbol, setSellAssetSymbol] = useState<string | null>(null);
+  const [sellAmount, setSellAmount] = useState("");
 
-  // Get user data
+  // Redirect if not authenticated
   useEffect(() => {
-    async function getUser() {
-      const supabase = createClient();
-      const {
-        data: { user: supabaseUser },
-      } = await supabase.auth.getUser();
-
-      if (!supabaseUser) {
-        router.push("/login");
-        return;
-      }
-
-      const authMethod = supabaseUser.user_metadata?.auth_method as string | undefined;
-      const web3WalletAddress = supabaseUser.user_metadata?.wallet_address as string | undefined;
-
-      setUser({
-        id: supabaseUser.id,
-        email: supabaseUser.email ?? "",
-        authMethod: authMethod ?? "email",
-        web3Address: web3WalletAddress,
-      });
-      setLoading(false);
+    if (ready && !isAuthenticated) {
+      router.push("/login");
     }
-
-    void getUser();
-  }, [router]);
+  }, [ready, isAuthenticated, router]);
 
   // Fetch available assets
   const { data: assetsData, isLoading: assetsLoading } =
     api.invest.getAssets.useQuery();
 
-  // Fetch user's balance
-  const displayWalletAddress =
-    user?.authMethod === "wallet" ? user.web3Address : undefined;
+  // Use Privy wallet address
+  const displayWalletAddress = walletAddress;
   const { data: balanceData } = api.wallet.getBalance.useQuery(
     { walletAddress: displayWalletAddress ?? "" },
     { enabled: !!displayWalletAddress },
@@ -86,11 +101,12 @@ export default function InvestPage() {
   // Buy asset mutation
   const buyAsset = api.invest.buyAsset.useMutation({
     onSuccess: (data) => {
-      toast.success(`Successfully bought ${data.amountPurchased.toFixed(4)} ${data.assetSymbol}!`, {
-        description: `Invested $${data.totalSpent.toFixed(2)} USDC`,
-      });
       setSelectedAsset(null);
       setBuyAmount("");
+      setReceipt({
+        ...data.receipt,
+        type: "BUY" as const,
+      });
       void refetchPortfolio();
     },
     onError: (error) => {
@@ -99,6 +115,48 @@ export default function InvestPage() {
       });
     },
   });
+
+  // Sell asset mutation
+  const sellAsset = api.invest.sellAsset.useMutation({
+    onSuccess: (data) => {
+      setSellAssetSymbol(null);
+      setSellAmount("");
+      setReceipt({
+        ...data.receipt,
+        type: "SELL" as const,
+      });
+      void refetchPortfolio();
+    },
+    onError: (error) => {
+      toast.error("Sale failed", {
+        description: error.message,
+      });
+    },
+  });
+
+  // Get asset to sell details
+  const sellAssetData = portfolioData?.assets.find(
+    (a) => a.symbol === sellAssetSymbol,
+  );
+
+  const handleSellSubmit = () => {
+    if (!user || !displayWalletAddress || !sellAssetSymbol || !sellAmount) {
+      return;
+    }
+
+    const shares = parseFloat(sellAmount);
+    if (isNaN(shares) || shares <= 0) {
+      toast.error("Invalid amount");
+      return;
+    }
+
+    sellAsset.mutate({
+      walletAddress: displayWalletAddress,
+      userId: user.id,
+      symbol: sellAssetSymbol,
+      sharesToSell: shares,
+    });
+  };
 
   const handleBuyClick = (symbol: string) => {
     console.log("Buy button clicked for symbol:", symbol);
@@ -140,7 +198,7 @@ export default function InvestPage() {
     (a) => a.symbol === selectedAsset,
   );
 
-  if (loading) {
+  if (!ready || !isAuthenticated) {
     return (
       <main className="min-h-screen bg-slate-50">
         <div className="container mx-auto px-4 py-16">
@@ -226,7 +284,7 @@ export default function InvestPage() {
                       className="flex items-center justify-between p-3 bg-white rounded-lg border border-slate-200"
                     >
                       <div className="flex items-center gap-3">
-                        <span className="text-2xl">{asset.logo}</span>
+                        <AssetIcon symbol={asset.symbol} className="w-10 h-10" />
                         <div>
                           <p className="font-medium text-slate-900">
                             {asset.name}
@@ -237,18 +295,28 @@ export default function InvestPage() {
                           </p>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <p className="font-medium text-slate-900">
-                          ${asset.currentValue.toFixed(2)}
-                        </p>
-                        <p
-                          className={`text-xs ${
-                            asset.gain >= 0 ? "text-emerald-600" : "text-rose-600"
-                          }`}
+                      <div className="flex items-center gap-3">
+                        <div className="text-right">
+                          <p className="font-medium text-slate-900">
+                            ${asset.currentValue.toFixed(2)}
+                          </p>
+                          <p
+                            className={`text-xs ${
+                              asset.gain >= 0 ? "text-emerald-600" : "text-rose-600"
+                            }`}
+                          >
+                            {asset.gain >= 0 ? "+" : ""}${asset.gain.toFixed(2)} (
+                            {asset.gainPercent.toFixed(2)}%)
+                          </p>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setSellAssetSymbol(asset.symbol)}
+                          className="border-rose-300 text-rose-600 hover:bg-rose-50 rounded-lg"
                         >
-                          {asset.gain >= 0 ? "+" : ""}${asset.gain.toFixed(2)} (
-                          {asset.gainPercent.toFixed(2)}%)
-                        </p>
+                          Sell
+                        </Button>
                       </div>
                     </div>
                   ))}
@@ -306,8 +374,8 @@ export default function InvestPage() {
                   >
                     <CardHeader>
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <span className="text-3xl">{asset.logo}</span>
+                        <div className="flex items-center gap-3">
+                          <AssetIcon symbol={asset.symbol} className="w-12 h-12" />
                           <div>
                             <CardTitle className="text-lg text-slate-900">
                               {asset.symbol.replace("s", "")}
@@ -383,8 +451,8 @@ export default function InvestPage() {
       <Dialog open={!!selectedAsset} onOpenChange={() => setSelectedAsset(null)}>
         <DialogContent className="rounded-xl">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <span className="text-2xl">{selectedAssetData?.logo}</span>
+            <DialogTitle className="flex items-center gap-3">
+              {selectedAssetData && <AssetIcon symbol={selectedAssetData.symbol} className="w-10 h-10" />}
               Buy {selectedAssetData?.name}
             </DialogTitle>
             <DialogDescription>
@@ -437,6 +505,196 @@ export default function InvestPage() {
                 {buyAsset.isPending ? "Processing..." : "Confirm Purchase"}
               </Button>
             </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Sell Modal */}
+      <Dialog open={!!sellAssetSymbol} onOpenChange={() => setSellAssetSymbol(null)}>
+        <DialogContent className="rounded-xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-3">
+              {sellAssetData && <AssetIcon symbol={sellAssetData.symbol} className="w-10 h-10" />}
+              Sell {sellAssetData?.name}
+            </DialogTitle>
+            <DialogDescription>
+              Current price: ${sellAssetData?.currentPrice.toFixed(2)} per share
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            {sellAssetData && (
+              <div className="bg-slate-50 rounded-lg p-3">
+                <p className="text-xs text-slate-500">Your Holdings</p>
+                <p className="font-medium text-slate-900">
+                  {sellAssetData.amount.toFixed(4)} shares (${sellAssetData.currentValue.toFixed(2)})
+                </p>
+              </div>
+            )}
+
+            <div>
+              <label
+                htmlFor="sellAmount"
+                className="text-sm font-medium text-slate-700 mb-2 block"
+              >
+                Shares to Sell
+              </label>
+              <Input
+                id="sellAmount"
+                type="number"
+                min="0.0001"
+                step="0.0001"
+                placeholder="0.5000"
+                value={sellAmount}
+                onChange={(e) => setSellAmount(e.target.value)}
+                className="rounded-xl"
+              />
+              {sellAmount && sellAssetData && (
+                <p className="text-sm text-slate-500 mt-2">
+                  You'll receive approximately{" "}
+                  <span className="font-medium text-emerald-600">
+                    ${(parseFloat(sellAmount) * sellAssetData.currentPrice).toFixed(2)} USDC
+                  </span>
+                </p>
+              )}
+              {sellAssetData && (
+                <Button
+                  variant="link"
+                  size="sm"
+                  onClick={() => setSellAmount(sellAssetData.amount.toString())}
+                  className="text-xs text-emerald-600 p-0 h-auto mt-1"
+                >
+                  Sell All
+                </Button>
+              )}
+            </div>
+
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setSellAssetSymbol(null)}
+                className="flex-1 rounded-xl"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleSellSubmit}
+                disabled={!sellAmount || sellAsset.isPending}
+                className="flex-1 bg-rose-600 hover:bg-rose-700 text-white rounded-xl"
+              >
+                {sellAsset.isPending ? "Processing..." : "Confirm Sale"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Transaction Receipt Modal */}
+      <Dialog open={!!receipt} onOpenChange={() => setReceipt(null)}>
+        <DialogContent className="rounded-xl max-w-md">
+          <div className="text-center py-4">
+            <div className={`w-16 h-16 mx-auto rounded-full flex items-center justify-center mb-4 ${
+              receipt?.type === "BUY" ? "bg-emerald-100" : "bg-blue-100"
+            }`}>
+              <CheckCircle2 className={`w-8 h-8 ${
+                receipt?.type === "BUY" ? "text-emerald-600" : "text-blue-600"
+              }`} />
+            </div>
+            <h2 className="text-xl font-bold text-slate-900 mb-1">
+              {receipt?.type === "BUY" ? "Purchase Successful" : "Sale Successful"}
+            </h2>
+            <p className="text-sm text-slate-500">Transaction confirmed on {receipt?.network}</p>
+          </div>
+
+          {receipt && (
+            <div className="bg-slate-50 rounded-xl p-4 space-y-3">
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-slate-500">Reference</span>
+                <span className="font-mono text-sm font-medium text-slate-900">{receipt.reference}</span>
+              </div>
+
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-slate-500">Asset</span>
+                <div className="flex items-center gap-2">
+                  <AssetIcon symbol={receipt.asset} className="w-6 h-6" />
+                  <span className="font-medium text-slate-900">{receipt.assetName}</span>
+                </div>
+              </div>
+
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-slate-500">Shares</span>
+                <div className="flex items-center gap-1">
+                  {receipt.type === "BUY" ? (
+                    <ArrowDownRight className="w-4 h-4 text-emerald-600" />
+                  ) : (
+                    <ArrowUpRight className="w-4 h-4 text-blue-600" />
+                  )}
+                  <span className="font-medium text-slate-900">{receipt.shares.toFixed(4)}</span>
+                </div>
+              </div>
+
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-slate-500">Price per Share</span>
+                <span className="font-medium text-slate-900">${receipt.pricePerShare.toFixed(2)}</span>
+              </div>
+
+              <div className="border-t border-slate-200 pt-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium text-slate-700">
+                    {receipt.type === "BUY" ? "Total Cost" : "Total Proceeds"}
+                  </span>
+                  <span className="text-lg font-bold text-slate-900">
+                    ${(receipt.totalCost ?? receipt.totalProceeds ?? 0).toFixed(2)} USDC
+                  </span>
+                </div>
+              </div>
+
+              {receipt.type === "SELL" && receipt.profitLoss !== undefined && (
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-slate-500">Profit/Loss</span>
+                  <span className={`font-medium ${receipt.profitLoss >= 0 ? "text-emerald-600" : "text-rose-600"}`}>
+                    {receipt.profitLoss >= 0 ? "+" : ""}${receipt.profitLoss.toFixed(2)}
+                  </span>
+                </div>
+              )}
+
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-slate-500">Time</span>
+                <span className="text-sm text-slate-900">
+                  {new Date(receipt.timestamp).toLocaleString()}
+                </span>
+              </div>
+            </div>
+          )}
+
+          <div className="flex gap-2 mt-2">
+            <Button
+              onClick={() => {
+                if (!receipt) return;
+                const shareText = `Grid Investment Receipt\n\n${receipt.type === "BUY" ? "Purchased" : "Sold"} ${receipt.shares.toFixed(4)} ${receipt.assetName}\nPrice: $${receipt.pricePerShare.toFixed(2)}/share\n${receipt.type === "BUY" ? "Total Cost" : "Total Proceeds"}: $${(receipt.totalCost ?? receipt.totalProceeds ?? 0).toFixed(2)} USDC\nRef: ${receipt.reference}\nNetwork: ${receipt.network}\nTime: ${new Date(receipt.timestamp).toLocaleString()}`;
+
+                if (navigator.share) {
+                  void navigator.share({
+                    title: `Grid ${receipt.type === "BUY" ? "Purchase" : "Sale"} Receipt`,
+                    text: shareText,
+                  });
+                } else {
+                  void navigator.clipboard.writeText(shareText);
+                  toast.success("Receipt copied to clipboard!");
+                }
+              }}
+              variant="outline"
+              className="flex-1 rounded-xl"
+            >
+              <Share2 className="w-4 h-4 mr-2" />
+              Share
+            </Button>
+            <Button
+              onClick={() => setReceipt(null)}
+              className="flex-1 bg-slate-900 hover:bg-slate-800 text-white rounded-xl"
+            >
+              Done
+            </Button>
           </div>
         </DialogContent>
       </Dialog>

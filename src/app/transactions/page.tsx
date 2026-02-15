@@ -246,7 +246,7 @@ export default function TransactionsPage() {
                             <p className="font-medium text-slate-900">
                               {tx.description ?? getTypeLabel(tx.type)}
                             </p>
-                            <p className="text-xs text-slate-500">
+                            <p className="text-xs text-slate-500" suppressHydrationWarning>
                               {new Date(tx.createdAt).toLocaleString()}
                             </p>
                             <p className="text-xs text-slate-400 font-mono">

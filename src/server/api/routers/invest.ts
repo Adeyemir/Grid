@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import { db } from "~/server/db";
+import { balanceStore } from "~/server/api/shared/balanceStore";
 
 // Mock asset data (Story 4.2: Asset Directory)
 // In production, these would come from a real market data API
@@ -54,9 +55,6 @@ const MOCK_ASSETS = [
     type: "stock" as const,
   },
 ];
-
-// Simulated balance tracker (in production, this would query Circle/Blockchain)
-const investedBalances = new Map<string, number>();
 
 export const investRouter = createTRPCRouter({
   /**
@@ -137,8 +135,8 @@ export const investRouter = createTRPCRouter({
       // Artificial delay (500ms) to feel like a real network request
       await new Promise((resolve) => setTimeout(resolve, 500));
 
-      // 1. Verify user has enough USDC balance
-      if (input.currentBalance < input.usdcAmount) {
+      // 1. Verify user has enough USDC balance using shared store
+      if (!balanceStore.hasEnough(input.walletAddress, input.usdcAmount)) {
         throw new Error("Insufficient USDC balance");
       }
 
@@ -187,44 +185,179 @@ export const investRouter = createTRPCRouter({
         });
       }
 
-      // 4. Track invested balance (deduct from available USDC mentally)
-      const currentInvested = investedBalances.get(input.walletAddress) ?? 0;
-      investedBalances.set(
-        input.walletAddress,
-        currentInvested + input.usdcAmount,
-      );
+      // 4. Deduct from wallet balance using shared store
+      balanceStore.subtract(input.walletAddress, input.usdcAmount);
 
       // 5. Create transaction record
-      await db.transaction.create({
+      const transaction = await db.transaction.create({
         data: {
           userId: input.userId,
           walletAddress: input.walletAddress,
           type: "investment",
-          amount: input.usdcAmount,
+          amount: -input.usdcAmount,
           symbol: input.symbol,
           status: "confirmed",
           description: `Bought ${amountOfAsset.toFixed(4)} ${input.symbol}`,
+          metadata: JSON.stringify({
+            action: "buy",
+            sharesPurchased: amountOfAsset,
+            pricePerShare: assetPrice,
+          }),
         },
       });
 
       return {
         success: true,
+        transactionId: transaction.id,
         assetSymbol: input.symbol,
         assetName: asset.name,
         amountPurchased: amountOfAsset,
         totalSpent: input.usdcAmount,
         pricePerUnit: assetPrice,
         message: `Successfully bought ${amountOfAsset.toFixed(4)} ${input.symbol}`,
+        receipt: {
+          transactionId: transaction.id,
+          reference: transaction.id.slice(0, 8).toUpperCase(),
+          type: "BUY",
+          asset: input.symbol,
+          assetName: asset.name,
+          shares: amountOfAsset,
+          pricePerShare: assetPrice,
+          totalCost: input.usdcAmount,
+          network: "Tempo Network",
+          timestamp: new Date().toISOString(),
+        },
       };
     }),
 
   /**
-   * Get total amount invested (deducted from cash balance)
+   * Sell a simulated asset
+   */
+  sellAsset: publicProcedure
+    .input(
+      z.object({
+        walletAddress: z.string(),
+        userId: z.string(),
+        symbol: z.string(),
+        sharesToSell: z.number().min(0.0001),
+      }),
+    )
+    .mutation(async ({ input }) => {
+      // Artificial delay (500ms) to feel like a real network request
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
+      // 1. Get user's position in this asset
+      const existingAsset = await db.simulatedAsset.findFirst({
+        where: {
+          walletAddress: input.walletAddress,
+          symbol: input.symbol,
+        },
+      });
+
+      if (!existingAsset) {
+        throw new Error("You don't own this asset");
+      }
+
+      if (existingAsset.amount < input.sharesToSell) {
+        throw new Error(`Insufficient shares. You only own ${existingAsset.amount.toFixed(4)} shares`);
+      }
+
+      // 2. Get current asset price
+      const asset = MOCK_ASSETS.find((a) => a.symbol === input.symbol);
+      if (!asset) {
+        throw new Error("Asset not found");
+      }
+
+      const currentPrice = asset.price;
+      const saleProceeds = input.sharesToSell * currentPrice;
+      const costBasis = input.sharesToSell * existingAsset.averageBuyPrice;
+      const profitLoss = saleProceeds - costBasis;
+
+      // 3. Update or delete position
+      const remainingShares = existingAsset.amount - input.sharesToSell;
+
+      if (remainingShares < 0.0001) {
+        // Sell all - delete position
+        await db.simulatedAsset.delete({
+          where: { id: existingAsset.id },
+        });
+      } else {
+        // Partial sell - update position
+        const proportionSold = input.sharesToSell / existingAsset.amount;
+        const investedSold = existingAsset.totalInvested * proportionSold;
+
+        await db.simulatedAsset.update({
+          where: { id: existingAsset.id },
+          data: {
+            amount: remainingShares,
+            totalInvested: existingAsset.totalInvested - investedSold,
+          },
+        });
+      }
+
+      // 4. Add proceeds to wallet balance
+      balanceStore.add(input.walletAddress, saleProceeds);
+
+      // 5. Create transaction record
+      const transaction = await db.transaction.create({
+        data: {
+          userId: input.userId,
+          walletAddress: input.walletAddress,
+          type: "investment",
+          amount: saleProceeds,
+          symbol: input.symbol,
+          status: "confirmed",
+          description: `Sold ${input.sharesToSell.toFixed(4)} ${input.symbol}`,
+          metadata: JSON.stringify({
+            action: "sell",
+            sharesSold: input.sharesToSell,
+            pricePerShare: currentPrice,
+            costBasis,
+            profitLoss,
+          }),
+        },
+      });
+
+      return {
+        success: true,
+        transactionId: transaction.id,
+        assetSymbol: input.symbol,
+        assetName: asset.name,
+        sharesSold: input.sharesToSell,
+        saleProceeds,
+        pricePerUnit: currentPrice,
+        costBasis,
+        profitLoss,
+        remainingShares,
+        message: `Successfully sold ${input.sharesToSell.toFixed(4)} ${input.symbol}`,
+        receipt: {
+          transactionId: transaction.id,
+          reference: transaction.id.slice(0, 8).toUpperCase(),
+          type: "SELL",
+          asset: input.symbol,
+          assetName: asset.name,
+          shares: input.sharesToSell,
+          pricePerShare: currentPrice,
+          totalProceeds: saleProceeds,
+          costBasis,
+          profitLoss,
+          network: "Tempo Network",
+          timestamp: new Date().toISOString(),
+        },
+      };
+    }),
+
+  /**
+   * Get total amount invested (from database)
    */
   getInvestedAmount: publicProcedure
     .input(z.object({ walletAddress: z.string() }))
     .query(async ({ input }) => {
-      const invested = investedBalances.get(input.walletAddress) ?? 0;
+      // Calculate total invested from simulated assets
+      const assets = await db.simulatedAsset.findMany({
+        where: { walletAddress: input.walletAddress },
+      });
+      const invested = assets.reduce((sum, asset) => sum + asset.totalInvested, 0);
       return { invested };
     }),
 });

@@ -11,7 +11,7 @@
 
 **Grid** is the "Income Operating System" for the global workforce. The user experience is defined by **speed, transparency, and liquidity**.
 
-Unlike traditional banking apps (cluttered, slow, punitive), Grid feels **light, instant, and empowering**. The interface hides the complexity of blockchain (Arc) and DeFi behind a familiar, "Neo-Bank" aesthetic.
+Unlike traditional banking apps (cluttered, slow, punitive), Grid feels **light, instant, and empowering**. The interface hides the complexity of blockchain (Tempo) and DeFi behind a familiar, "Neo-Bank" aesthetic.
 
 **Core Design Philosophy:** "Invisible Infrastructure." The user should never feel the "crypto" friction; they should only feel the financial freedom.
 
@@ -62,7 +62,7 @@ The core dashboard isn't static. It breathes.
 * **The Yield Ticker:** The user's balance should visually increment (micro-animation) every few seconds to show the 5% APY working.
 * **Instant Feedback:** When "Simulate Payroll" is clicked, the notification arrives in <200ms with a haptic tap.
 
-### 4.2 Privacy Pattern (The Arc Advantage)
+### 4.2 Privacy Pattern
 * **Global Toggle:** An "Eye" icon in the top right header.
 * **State ON:** All balances and transaction amounts are visible.
 * **State OFF:** All sensitive numbers are replaced with `••••` or blurred.

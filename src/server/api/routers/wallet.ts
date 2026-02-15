@@ -3,9 +3,7 @@ import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import { createClient } from "@supabase/supabase-js";
 import { env } from "~/env";
 import { db } from "~/server/db";
-
-// Simulated balance storage (in production, this would query the blockchain or Circle API)
-const balances = new Map<string, number>();
+import { balanceStore } from "~/server/api/shared/balanceStore";
 
 // Simulated transaction history
 interface Transaction {
@@ -34,8 +32,8 @@ export const walletRouter = createTRPCRouter({
   getBalance: publicProcedure
     .input(z.object({ walletAddress: z.string() }))
     .query(async ({ input }) => {
-      // In production, this would query Circle API or Tempo blockchain
-      const balance = balances.get(input.walletAddress) ?? 0;
+      // In production, this would query the Tempo blockchain
+      const balance = balanceStore.get(input.walletAddress);
 
       return {
         balance,
@@ -47,9 +45,8 @@ export const walletRouter = createTRPCRouter({
   /**
    * Simulate receiving a paycheck (Faucet)
    * In production, this would:
-   * 1. Call Circle Programmable Wallets API
-   * 2. Transfer USDC from Treasury wallet to user wallet
-   * 3. Return the transaction hash from Tempo Network
+   * 1. Transfer USDC from Treasury wallet to user wallet
+   * 2. Return the transaction hash from Tempo Network
    */
   simulatePayroll: publicProcedure
     .input(
@@ -62,14 +59,33 @@ export const walletRouter = createTRPCRouter({
       // Simulate blockchain delay (1-2 seconds)
       await new Promise((resolve) => setTimeout(resolve, 1500));
 
-      // Update balance
-      const currentBalance = balances.get(input.walletAddress) ?? 0;
-      const newBalance = currentBalance + input.amount;
-      balances.set(input.walletAddress, newBalance);
+      // Update balance using shared store
+      const newBalance = balanceStore.add(input.walletAddress, input.amount);
 
       // Create transaction record
+      const txId = `0x${Math.random().toString(16).substring(2, 66).padEnd(64, "0")}`;
+
+      // Save to database
+      await db.transaction.create({
+        data: {
+          id: txId,
+          userId: input.walletAddress, // Use wallet address as userId for faucet
+          walletAddress: input.walletAddress,
+          type: "payroll",
+          amount: input.amount,
+          symbol: "USDC",
+          status: "confirmed",
+          description: "Test Faucet - Payroll",
+          metadata: JSON.stringify({
+            source: "faucet",
+            txHash: txId,
+          }),
+        },
+      });
+
+      // Also store in memory for backward compatibility
       const transaction: Transaction = {
-        id: `0x${Math.random().toString(16).substring(2, 66).padEnd(64, "0")}`,
+        id: txId,
         walletAddress: input.walletAddress,
         amount: input.amount,
         type: "receive",
@@ -77,14 +93,13 @@ export const walletRouter = createTRPCRouter({
         status: "confirmed",
       };
 
-      // Store transaction
       const userTransactions = transactions.get(input.walletAddress) ?? [];
       userTransactions.unshift(transaction);
       transactions.set(input.walletAddress, userTransactions);
 
       return {
         success: true,
-        transactionHash: transaction.id,
+        transactionHash: txId,
         amount: input.amount,
         newBalance,
         message: `Successfully received ${input.amount} USDC`,
@@ -203,7 +218,7 @@ export const walletRouter = createTRPCRouter({
 
   /**
    * Transfer USDC to another wallet
-   * In production, this would use Circle Programmable Wallets SDK executeTransfer
+   * In production, this would execute a transfer on Tempo Network
    */
   transferFunds: publicProcedure
     .input(
@@ -219,21 +234,56 @@ export const walletRouter = createTRPCRouter({
       await new Promise((resolve) => setTimeout(resolve, 1500));
 
       // Check sender has sufficient balance
-      const senderBalance = balances.get(input.fromWalletAddress) ?? 0;
-      if (senderBalance < input.amount) {
+      if (!balanceStore.hasEnough(input.fromWalletAddress, input.amount)) {
         throw new Error("Insufficient balance");
       }
 
-      // Deduct from sender
-      balances.set(input.fromWalletAddress, senderBalance - input.amount);
-
-      // Add to recipient
-      const recipientBalance = balances.get(input.toWalletAddress) ?? 0;
-      balances.set(input.toWalletAddress, recipientBalance + input.amount);
+      // Deduct from sender and add to recipient
+      balanceStore.subtract(input.fromWalletAddress, input.amount);
+      balanceStore.add(input.toWalletAddress, input.amount);
 
       // Create transaction records
       const txId = `0x${Math.random().toString(16).substring(2, 66).padEnd(64, "0")}`;
 
+      // Save sender transaction to database
+      await db.transaction.create({
+        data: {
+          id: txId + "-send",
+          userId: input.fromWalletAddress, // Use wallet address as userId
+          walletAddress: input.fromWalletAddress,
+          type: "send",
+          amount: -input.amount,
+          symbol: "USDC",
+          status: "confirmed",
+          description: `Sent to ${input.toWalletAddress.slice(0, 6)}...${input.toWalletAddress.slice(-4)}`,
+          metadata: JSON.stringify({
+            recipient: input.toWalletAddress,
+            note: input.note,
+            txHash: txId,
+          }),
+        },
+      });
+
+      // Save recipient transaction to database
+      await db.transaction.create({
+        data: {
+          id: txId + "-receive",
+          userId: input.toWalletAddress, // Use wallet address as userId
+          walletAddress: input.toWalletAddress,
+          type: "receive",
+          amount: input.amount,
+          symbol: "USDC",
+          status: "confirmed",
+          description: `Received from ${input.fromWalletAddress.slice(0, 6)}...${input.fromWalletAddress.slice(-4)}`,
+          metadata: JSON.stringify({
+            sender: input.fromWalletAddress,
+            note: input.note,
+            txHash: txId,
+          }),
+        },
+      });
+
+      // Also store in memory for backward compatibility
       const senderTx: Transaction = {
         id: txId,
         walletAddress: input.fromWalletAddress,
@@ -256,7 +306,6 @@ export const walletRouter = createTRPCRouter({
         note: input.note,
       };
 
-      // Store transactions
       const senderTransactions = transactions.get(input.fromWalletAddress) ?? [];
       senderTransactions.unshift(senderTx);
       transactions.set(input.fromWalletAddress, senderTransactions);
@@ -269,7 +318,7 @@ export const walletRouter = createTRPCRouter({
         success: true,
         transactionHash: txId,
         amount: input.amount,
-        newBalance: senderBalance - input.amount,
+        newBalance: balanceStore.get(input.fromWalletAddress),
         message: `Successfully sent ${input.amount} USDC`,
         recipient: input.toWalletAddress,
       };

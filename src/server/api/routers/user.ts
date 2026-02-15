@@ -114,4 +114,29 @@ export const userRouter = createTRPCRouter({
 
       return profile;
     }),
+
+  // Get user by username (for sending to Grid users)
+  getByUsername: publicProcedure
+    .input(z.object({ username: z.string() }))
+    .query(async ({ ctx, input }) => {
+      // Clean the username - remove @ and lowercase
+      const cleanUsername = input.username.toLowerCase().replace(/^@/, "").trim();
+
+      const profile = await ctx.db.userProfile.findUnique({
+        where: { username: cleanUsername },
+      });
+
+      if (!profile) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "User not found",
+        });
+      }
+
+      return {
+        username: profile.username,
+        displayName: profile.displayName,
+        walletAddress: profile.walletAddress,
+      };
+    }),
 });

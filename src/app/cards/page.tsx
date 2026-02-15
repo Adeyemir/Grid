@@ -11,57 +11,47 @@ import {
   CardTitle,
 } from "~/components/ui/card";
 import { Skeleton } from "~/components/ui/skeleton";
-import { createClient } from "~/lib/supabase/client";
+import { useGridAuth } from "~/hooks/useGridAuth";
 import { MobileNav } from "~/components/MobileNav";
 
 export default function CardsPage() {
   const router = useRouter();
-  const [user, setUser] = useState<{
-    email: string;
-    authMethod: string;
-    web3Address?: string;
-  } | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { user, ready, isAuthenticated } = useGridAuth();
   const [isRevealed, setIsRevealed] = useState(false);
+
+  // Get user name from Privy - prioritize full name, then username, then email
+  const getUserName = (): string => {
+    // Check for Google name first (most likely to have full name)
+    if (user?.google?.name) {
+      return user.google.name.toUpperCase();
+    }
+    // Check for Twitter username
+    if (user?.twitter?.username) {
+      return user.twitter.username.toUpperCase();
+    }
+    // Fall back to email username
+    const email = user?.email?.address ?? user?.google?.email;
+    if (email) {
+      return email.split("@")[0]?.toUpperCase() ?? "GRID USER";
+    }
+    return "GRID USER";
+  };
 
   // Mock card data (Story 5.2)
   const cardData = {
     cardNumber: "4532 1234 5678 4242",
-    cardholderName: user?.email?.split("@")[0]?.toUpperCase() ?? "GRID USER",
+    cardholderName: getUserName(),
     expiryDate: "12/27",
     cvv: "123",
     network: "VISA",
   };
 
-  // Get user data
+  // Redirect if not authenticated
   useEffect(() => {
-    async function getUser() {
-      const supabase = createClient();
-      const {
-        data: { user: supabaseUser },
-      } = await supabase.auth.getUser();
-
-      if (!supabaseUser) {
-        router.push("/login");
-        return;
-      }
-
-      const authMethod = supabaseUser.user_metadata?.auth_method as
-        | string
-        | undefined;
-      const web3WalletAddress = supabaseUser.user_metadata
-        ?.wallet_address as string | undefined;
-
-      setUser({
-        email: supabaseUser.email ?? "",
-        authMethod: authMethod ?? "email",
-        web3Address: web3WalletAddress,
-      });
-      setLoading(false);
+    if (ready && !isAuthenticated) {
+      router.push("/login");
     }
-
-    void getUser();
-  }, [router]);
+  }, [ready, isAuthenticated, router]);
 
   const maskCardNumber = (number: string) => {
     const parts = number.split(" ");
@@ -70,7 +60,7 @@ export default function CardsPage() {
 
   const maskCVV = () => "•••";
 
-  if (loading) {
+  if (!ready || !isAuthenticated) {
     return (
       <main className="min-h-screen bg-slate-50">
         <div className="container mx-auto px-4 py-16">

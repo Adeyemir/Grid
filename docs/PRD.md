@@ -2,13 +2,13 @@
 
 **Author:** Ade
 **Date:** 2025-12-03
-**Version:** 1.0
+**Version:** 2.0 (Updated)
 
 ---
 
 ## Executive Summary
 
-**Grid** is a financial super-app built on the **Arc** network that replaces the traditional bank account for global gig workers and freelancers. While competitors focus on merely *moving* money (payroll), Grid focuses on *keeping and growing* it.
+**Grid** is a financial super-app built on the **Tempo** network that replaces the traditional bank account for global gig workers and freelancers. While competitors focus on merely *moving* money (payroll), Grid focuses on *keeping and growing* it.
 
 The core value proposition is **"The Income Operating System"**:
 1.  **Earn:** Receive stablecoin payroll instantly with near-zero fees.
@@ -17,7 +17,7 @@ The core value proposition is **"The Income Operating System"**:
 
 ### What Makes This Special
 
-The **"No-Off-Ramp" Ecosystem**. Users can live their financial lives entirely in stablecoins (USDC), avoiding the friction, delays, and fees of converting back to local inflationary currencies until the exact moment of spending. It leverages Arc's **opt-in configurable privacy** to give users control over their financial data visibility.
+The **"No-Off-Ramp" Ecosystem**. Users can live their financial lives entirely in stablecoins (USDC), avoiding the friction, delays, and fees of converting back to local inflationary currencies until the exact moment of spending.
 
 ---
 
@@ -29,7 +29,7 @@ The **"No-Off-Ramp" Ecosystem**. Users can live their financial lives entirely i
 
 ### Domain Context
 
-**Stablecoin-Native Finance:** The product relies on the stability of USDC and the low-cost infrastructure of Arc to make micro-transactions (like buying coffee or paying a $5 bill) economically viable, which is impossible on Ethereum L1 or via SWIFT.
+**Stablecoin-Native Finance:** The product relies on the stability of USDC and the low-cost infrastructure of Tempo to make micro-transactions (like buying coffee or paying a $5 bill) economically viable, which is impossible on Ethereum L1 or via SWIFT.
 
 ---
 
@@ -45,10 +45,11 @@ The **"No-Off-Ramp" Ecosystem**. Users can live their financial lives entirely i
 
 ### MVP - Minimum Viable Product (Testnet Prototype)
 
-* **Identity:** Functional sign-up (Email/Social) creating a non-custodial wallet address on Arc Testnet.
+* **Identity:** Functional sign-up (Email/Social/Wallet) via Privy creating an embedded wallet on Tempo Testnet.
 * **The "Paycheck":** Users can trigger a "Simulate Paycheck" action (Faucet) to instantly receive Testnet USDC.
 * **Wallet Basics:** Sending/Receiving testnet USDC between Grid wallets works on-chain.
-* **Privacy:** UI toggle for Public/Private transaction visibility.
+* **Grid Usernames:** Users can set custom usernames for easy peer-to-peer transfers.
+* **Privacy:** UI toggle for hiding/showing balances.
 * **Simulated Features:** Stock Investing (Visual trade simulation), Bill Pay (Visual success simulation), Yield Ticker (Visual increment).
 
 ### Growth Features (Post-MVP)
@@ -68,27 +69,28 @@ The **"No-Off-Ramp" Ecosystem**. Users can live their financial lives entirely i
 ## Functional Requirements
 
 ### User Access & Identity
-* **FR1:** Users can create a Grid account using social login (Google/Email) which generates a non-custodial Arc Testnet wallet in the background.
-* **FR2:** Users can view their total "Net Worth" dashboard aggregating USDC balance and (simulated) investment values.
+* **FR1:** Users can create a Grid account using social login (Google/Twitter/Email) or wallet connection via Privy, which generates an embedded Tempo wallet.
+* **FR2:** Users can set a custom Grid username for easy peer-to-peer transfers.
+* **FR3:** Users can view their total "Net Worth" dashboard aggregating USDC balance and investment values.
 
 ### Earn (The Payroll Experience)
-* **FR3:** Users can copy their USDC wallet address or a "Payment Link" to share with employers.
-* **FR4:** Users can trigger a "Simulate Paycheck" action (Faucet) to instantly receive Testnet USDC.
-* **FR5:** Users receive a visual notification of incoming funds within <1 second of the transaction.
+* **FR4:** Users can copy their USDC wallet address or share their Grid username to receive funds.
+* **FR5:** Users can trigger a "Simulate Paycheck" action (Faucet) to instantly receive Testnet USDC.
+* **FR6:** Users receive a visual notification of incoming funds within <1 second of the transaction.
 
 ### Grow (Wealth Simulation)
-* **FR6:** Users can browse a directory of supported investment assets (e.g., TSLA, S&P 500, Yield Vaults) with simulated live pricing.
-* **FR7:** Users can execute a "Buy" action for an asset. *Note: System updates the UI balance instantly based on mock logic; no real RWA contract interaction.*
-* **FR8:** Users can see a "Yield Ticker" on their savings balance that visually increments in real-time to demonstrate the 5% APY value prop.
+* **FR7:** Users can browse a directory of supported investment assets (e.g., TSLA, S&P 500, Yield Vaults) with simulated live pricing.
+* **FR8:** Users can execute a "Buy" or "Sell" action for an asset with transaction receipts.
+* **FR9:** Users can see a "Yield Ticker" on their savings balance that visually increments in real-time to demonstrate the 5% APY value prop.
 
 ### Spend (Utility Simulation)
-* **FR9:** Users can browse a catalog of local billers (e.g., Airtime, Data, Electricity) filtered by region.
-* **FR10:** Users can pay a bill using their USDC balance. *Note: System deducts Testnet USDC and shows a "Success" receipt; no actual API call to biller.*
-* **FR11:** Users can generate a "Virtual Card" visual representation with card details masked/unmasked on demand.
+* **FR10:** Users can browse a catalog of local billers (e.g., Airtime, Data, Electricity) filtered by region.
+* **FR11:** Users can pay a bill using their USDC balance with shareable receipts.
+* **FR12:** Users can generate a "Virtual Card" visual representation with card details masked/unmasked on demand.
 
 ### Transaction History & Privacy
-* **FR12:** Users can view a unified history of all transactions (Real transfers, Simulated trades, Simulated bill pays) in one chronological feed.
-* **FR13:** Users can toggle **"Transaction Privacy"** settings (Public/Private) for specific transaction types (e.g., Keep "Payroll" public for credit building, but make "Bill Pay" private).
+* **FR13:** Users can view a unified history of all transactions (transfers, trades, bill pays) in one chronological feed.
+* **FR14:** Users can toggle balance visibility with a privacy toggle inside the balance cards.
 
 ---
 
@@ -100,8 +102,8 @@ The **"No-Off-Ramp" Ecosystem**. Users can live their financial lives entirely i
 
 ### Trust & Security
 * **NFR3 (Trust Design):** The UI must use "Trust Signals" (clean layout, clear confirmation screens, no jargon) to overcome crypto-skepticism.
-* **NFR4 (Privacy):** Privacy toggles must clearly indicate the visibility state of the transaction to the user before they confirm.
+* **NFR4 (Privacy):** Privacy toggles must clearly indicate the visibility state to the user.
 
 ---
 
-_This PRD captures the essence of Grid - A friction-free, instant payroll wallet built on Arc that treats stablecoins like cash, not crypto.
+_This PRD captures the essence of Grid - A friction-free, instant payroll wallet built on Tempo that treats stablecoins like cash, not crypto._

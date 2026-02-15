@@ -8,7 +8,7 @@
 ---
 
 ## 1. Executive Summary
-**Grid** is a financial super-app built on the **Arc** network that replaces the traditional bank account for global gig workers and freelancers. While competitors focus on merely *moving* money (payroll), Grid focuses on *keeping and growing* it.
+**Grid** is a financial super-app built on the **Tempo** network that replaces the traditional bank account for global gig workers and freelancers. While competitors focus on merely *moving* money (payroll), Grid focuses on *keeping and growing* it.
 
 The core value proposition is **"The Income Operating System"**:
 1.  **Earn:** Receive stablecoin payroll instantly with near-zero fees (vs. 5-10% wire fees).
@@ -36,10 +36,10 @@ Since this is a Visual Prototype, success is measured by **User Perception**:
 ## 4. Product Scope
 
 ### **IN SCOPE (The "Real" Parts)**
-* **Onboarding:** Functional sign-up (Email/Social) creating a non-custodial wallet address on Arc Testnet.
+* **Onboarding:** Functional sign-up (Email/Social/Wallet) via Privy creating an embedded wallet on Tempo Testnet.
 * **The "Paycheck":** Users can use a faucet button to "Simulate Payroll" and see their USDC balance update in real-time.
 * **Wallet Basics:** Sending/Receiving testnet USDC between Grid wallets works on-chain.
-* **Privacy Controls:** Users can toggle transaction visibility (leveraging Arc's privacy features).
+* **Privacy Controls:** Users can toggle balance visibility for privacy.
 
 ### **SIMULATED (The "Mock" Parts)**
 * **Stock Investing:** Users can tap "Buy $50 TSLA." The app *simulates* the trade visually (deducts USDC, adds "TSLA" to dashboard), but **no real RWA contract is called**. Prices are pulled from a mock API.
@@ -56,7 +56,7 @@ Since this is a Visual Prototype, success is measured by **User Perception**:
 
 ## 5. Key Features Overview
 
-1.  **Identity:** Social Login + Arc Wallet.
+1.  **Identity:** Social Login via Privy + Tempo Wallet.
 2.  **Earn:** Instant Payroll (Testnet Faucet).
 3.  **Grow:** Simulated Stocks/Yields.
 4.  **Spend:** Simulated Bill Pay & Virtual Card Reveal.

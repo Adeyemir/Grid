@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import { db } from "~/server/db";
+import { balanceStore } from "~/server/api/shared/balanceStore";
 
 // Mock bill providers (Story 5.1)
 export const BILL_PROVIDERS = [
@@ -50,9 +51,6 @@ export const BILL_PROVIDERS = [
   },
 ];
 
-// Track spent balances (in production, this deducts from Circle wallet)
-const spentBalances = new Map<string, number>();
-
 export const spendRouter = createTRPCRouter({
   /**
    * Get available bill providers
@@ -82,10 +80,7 @@ export const spendRouter = createTRPCRouter({
       await new Promise((resolve) => setTimeout(resolve, 500));
 
       // 1. Verify user has enough USDC balance
-      const totalSpent = spentBalances.get(input.walletAddress) ?? 0;
-      const availableBalance = input.currentBalance - totalSpent;
-
-      if (availableBalance < input.amount) {
+      if (!balanceStore.hasEnough(input.walletAddress, input.amount)) {
         throw new Error("Insufficient USDC balance");
       }
 
@@ -95,8 +90,8 @@ export const spendRouter = createTRPCRouter({
         throw new Error("Provider not found");
       }
 
-      // 3. Track spent balance
-      spentBalances.set(input.walletAddress, totalSpent + input.amount);
+      // 3. Deduct from wallet balance
+      balanceStore.subtract(input.walletAddress, input.amount);
 
       // 4. Create transaction record
       const transaction = await db.transaction.create({
@@ -122,8 +117,8 @@ export const spendRouter = createTRPCRouter({
         amount: input.amount,
         message: `Successfully paid ${provider.name}`,
         receipt: {
+          providerId: provider.id,
           providerName: provider.name,
-          providerLogo: provider.logo,
           amount: input.amount,
           reference: transaction.id,
           network: "Tempo Network",
@@ -162,12 +157,19 @@ export const spendRouter = createTRPCRouter({
     }),
 
   /**
-   * Get total spent amount (for balance calculation)
+   * Get total spent amount (from database)
    */
   getTotalSpent: publicProcedure
     .input(z.object({ walletAddress: z.string() }))
     .query(async ({ input }) => {
-      const spent = spentBalances.get(input.walletAddress) ?? 0;
+      // Calculate total spent from transactions
+      const transactions = await db.transaction.findMany({
+        where: {
+          walletAddress: input.walletAddress,
+          type: "bill_pay",
+        },
+      });
+      const spent = transactions.reduce((sum, tx) => sum + Math.abs(tx.amount), 0);
       return { spent };
     }),
 });

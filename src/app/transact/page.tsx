@@ -10,10 +10,17 @@ import {
   CardHeader,
   CardTitle,
 } from "~/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "~/components/ui/dialog";
 import { Input } from "~/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Skeleton } from "~/components/ui/skeleton";
-import { createClient } from "~/lib/supabase/client";
+import { Share2, CheckCircle2, Copy } from "lucide-react";
+import { useGridAuth } from "~/hooks/useGridAuth";
 import { api } from "~/trpc/react";
 import { toast } from "sonner";
 import { MobileNav } from "~/components/MobileNav";
@@ -21,13 +28,7 @@ import { QRCodeSVG } from "qrcode.react";
 
 export default function TransactPage() {
   const router = useRouter();
-  const [user, setUser] = useState<{
-    id: string;
-    email: string;
-    authMethod: string;
-    web3Address?: string;
-  } | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { user, ready, isAuthenticated, walletAddress } = useGridAuth();
   const [activeTab, setActiveTab] = useState("receive");
 
   // Send form state - Grid User
@@ -51,37 +52,67 @@ export default function TransactPage() {
   const [accountName, setAccountName] = useState("");
   const [bankAmount, setBankAmount] = useState("");
 
-  // Get user data
+  // Receipt state
+  const [showReceipt, setShowReceipt] = useState(false);
+  const [receipt, setReceipt] = useState<{
+    type: "grid" | "external";
+    amount: number;
+    recipient: string;
+    recipientDisplay: string;
+    txHash: string;
+    timestamp: Date;
+    note?: string;
+  } | null>(null);
+
+  // Pending transfer info (to build receipt after success)
+  const [pendingTransfer, setPendingTransfer] = useState<{
+    type: "grid" | "external";
+    recipientDisplay: string;
+    note?: string;
+  } | null>(null);
+
+  // Redirect if not authenticated
   useEffect(() => {
-    async function getUser() {
-      const supabase = createClient();
-      const {
-        data: { user: supabaseUser },
-      } = await supabase.auth.getUser();
-
-      if (!supabaseUser) {
-        router.push("/login");
-        return;
-      }
-
-      const authMethod = supabaseUser.user_metadata?.auth_method as string | undefined;
-      const web3WalletAddress = supabaseUser.user_metadata?.wallet_address as string | undefined;
-
-      setUser({
-        id: supabaseUser.id,
-        email: supabaseUser.email ?? "",
-        authMethod: authMethod ?? "email",
-        web3Address: web3WalletAddress,
-      });
-      setLoading(false);
+    if (ready && !isAuthenticated) {
+      router.push("/login");
     }
+  }, [ready, isAuthenticated, router]);
 
-    void getUser();
-  }, [router]);
+  // Get user email from Privy
+  const userEmail = user?.email?.address ?? user?.google?.email ?? "";
 
-  // Determine wallet address
-  const displayWalletAddress =
-    user?.authMethod === "wallet" ? user.web3Address : undefined;
+  // Use Privy wallet address
+  const displayWalletAddress = walletAddress;
+
+  // Fetch user profile for custom username
+  const { data: profileData } = api.user.getProfile.useQuery(
+    { privyUserId: user?.id ?? "" },
+    { enabled: !!user?.id }
+  );
+
+  // Get user display name - prioritize profile, then social, then email
+  const getUserDisplayName = (): string => {
+    // Check for custom profile username first
+    if (profileData?.username) {
+      return profileData.username;
+    }
+    // Check for Google name
+    if (user?.google?.name) {
+      return user.google.name;
+    }
+    // Check for Twitter username
+    if (user?.twitter?.username) {
+      return user.twitter.username;
+    }
+    // Fall back to email username
+    const email = user?.email?.address ?? user?.google?.email;
+    if (email) {
+      return email.split("@")[0] ?? "user";
+    }
+    return "user";
+  };
+
+  const displayName = getUserDisplayName();
 
   // Fetch user's balance
   const { data: balanceData, refetch: refetchBalance } =
@@ -109,14 +140,30 @@ export default function TransactPage() {
   // Transfer funds mutation
   const transferFunds = api.wallet.transferFunds.useMutation({
     onSuccess: (data) => {
-      toast.success("Transfer successful!", {
-        description: `Sent $${data.amount.toFixed(2)} USDC`,
-      });
+      // Create receipt
+      if (pendingTransfer) {
+        setReceipt({
+          type: pendingTransfer.type,
+          amount: data.amount,
+          recipient: data.recipient,
+          recipientDisplay: pendingTransfer.recipientDisplay,
+          txHash: data.transactionHash,
+          timestamp: new Date(),
+          note: pendingTransfer.note,
+        });
+        setShowReceipt(true);
+        setPendingTransfer(null);
+      } else {
+        toast.success("Transfer successful!", {
+          description: `Sent $${data.amount.toFixed(2)} USDC`,
+        });
+      }
       // Clear all form states
       setGridUsername("");
       setGridAmount("");
       setGridNote("");
       setResolvedGridUser(null);
+      setSearchUsername("");
       setExternalAddress("");
       setExternalAmount("");
       setExternalNote("");
@@ -126,6 +173,7 @@ export default function TransactPage() {
       toast.error("Transfer failed", {
         description: error.message,
       });
+      setPendingTransfer(null);
     },
   });
 
@@ -137,37 +185,45 @@ export default function TransactPage() {
     });
   };
 
-  // Resolve username - debounced
+  // State for username being searched
+  const [searchUsername, setSearchUsername] = useState("");
+
+  // Query to resolve username - using tRPC properly
+  const { data: resolvedUserData, isLoading: isResolvingUser, isError: isUserNotFound } = api.user.getByUsername.useQuery(
+    { username: searchUsername },
+    {
+      enabled: searchUsername.length >= 3,
+      retry: false,
+      refetchOnWindowFocus: false,
+    }
+  );
+
+  // Debounce username input before searching
   useEffect(() => {
-    const resolveUser = async () => {
-      if (gridUsername && (gridUsername.startsWith("@") || gridUsername.includes("@"))) {
-        try {
-          const cleanUsername = gridUsername.replace(/^@/, "");
-          const response = await fetch(`/api/trpc/wallet.resolveUsername?input=${encodeURIComponent(JSON.stringify({ username: cleanUsername }))}`);
-          const data = await response.json();
-
-          if (data.result?.data) {
-            setResolvedGridUser({
-              username: cleanUsername,
-              walletAddress: data.result.data.walletAddress,
-              email: data.result.data.email,
-            });
-            toast.success("User found!", {
-              description: `${data.result.data.email}`,
-            });
-          }
-        } catch (error) {
-          // Username not found
-          setResolvedGridUser(null);
-        }
-      } else {
-        setResolvedGridUser(null);
-      }
-    };
-
-    const timeoutId = setTimeout(resolveUser, 500);
-    return () => clearTimeout(timeoutId);
+    if (gridUsername && gridUsername.length >= 3) {
+      const cleanUsername = gridUsername.replace(/^@/, "").toLowerCase();
+      const timeoutId = setTimeout(() => {
+        setSearchUsername(cleanUsername);
+      }, 500);
+      return () => clearTimeout(timeoutId);
+    } else {
+      setSearchUsername("");
+      setResolvedGridUser(null);
+    }
   }, [gridUsername]);
+
+  // Update resolved user when query returns data
+  useEffect(() => {
+    if (resolvedUserData) {
+      setResolvedGridUser({
+        username: resolvedUserData.username,
+        walletAddress: resolvedUserData.walletAddress ?? "",
+        email: resolvedUserData.displayName ?? resolvedUserData.username,
+      });
+    } else if (searchUsername.length >= 3 && (isUserNotFound || !isResolvingUser)) {
+      setResolvedGridUser(null);
+    }
+  }, [resolvedUserData, searchUsername, isResolvingUser, isUserNotFound]);
 
   // Handle Grid User send
   const handleGridUserSend = () => {
@@ -181,11 +237,25 @@ export default function TransactPage() {
       return;
     }
 
+    if (!resolvedGridUser.walletAddress) {
+      toast.error("This user hasn't set up their wallet yet", {
+        description: "They need to log in to Grid to receive payments",
+      });
+      return;
+    }
+
     const amountNum = parseFloat(gridAmount);
     if (isNaN(amountNum) || amountNum <= 0) {
       toast.error("Invalid amount");
       return;
     }
+
+    // Set pending transfer info for receipt
+    setPendingTransfer({
+      type: "grid",
+      recipientDisplay: `@${resolvedGridUser.username}`,
+      note: gridNote || undefined,
+    });
 
     transferFunds.mutate({
       fromWalletAddress: displayWalletAddress,
@@ -193,14 +263,6 @@ export default function TransactPage() {
       amount: amountNum,
       note: gridNote || undefined,
     });
-
-    // Clear form on success
-    if (transferFunds.isSuccess) {
-      setGridUsername("");
-      setGridAmount("");
-      setGridNote("");
-      setResolvedGridUser(null);
-    }
   };
 
   // Handle External Wallet send
@@ -221,23 +283,23 @@ export default function TransactPage() {
       return;
     }
 
+    // Set pending transfer info for receipt
+    setPendingTransfer({
+      type: "external",
+      recipientDisplay: `${externalAddress.slice(0, 6)}...${externalAddress.slice(-4)}`,
+      note: externalNote || undefined,
+    });
+
     transferFunds.mutate({
       fromWalletAddress: displayWalletAddress,
       toWalletAddress: externalAddress,
       amount: amountNum,
       note: externalNote || undefined,
     });
-
-    // Clear form on success
-    if (transferFunds.isSuccess) {
-      setExternalAddress("");
-      setExternalAmount("");
-      setExternalNote("");
-    }
   };
 
-  // Extract username from email (before @)
-  const username = user?.email.split("@")[0] ?? "";
+  // Use display name for Grid username
+  const username = displayName;
 
   // Generate mock 10-digit account number from wallet address
   const mockAccountNumber = displayWalletAddress
@@ -253,7 +315,7 @@ export default function TransactPage() {
   const USDC_TO_NGN = 1500;
   const ngnEquivalent = bankAmount ? (parseFloat(bankAmount) * USDC_TO_NGN).toFixed(2) : "0.00";
 
-  if (loading) {
+  if (!ready || !isAuthenticated) {
     return (
       <main className="min-h-screen w-full bg-slate-50 overflow-x-hidden">
         <div className="container mx-auto px-4 py-16 max-w-full">
@@ -466,7 +528,7 @@ export default function TransactPage() {
                     <div className="flex items-center justify-between py-2">
                       <span className="text-sm text-slate-500 flex-shrink-0">Account Name</span>
                       <span className="text-sm font-semibold text-slate-900 break-all text-right ml-2">
-                        {user?.email}
+                        {userEmail}
                       </span>
                     </div>
                   </div>
@@ -655,7 +717,22 @@ export default function TransactPage() {
                       onChange={(e) => setGridUsername(e.target.value)}
                       className="rounded-xl border-violet-200 focus:border-violet-500 focus:ring-violet-500"
                     />
-                    {resolvedGridUser && (
+                    {isResolvingUser && searchUsername.length >= 3 && (
+                      <div className="mt-2 p-2 bg-slate-50 rounded-lg border border-slate-200">
+                        <p className="text-xs text-slate-600 flex items-center gap-1">
+                          <svg
+                            className="w-4 h-4 animate-spin"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                          >
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          Looking up user...
+                        </p>
+                      </div>
+                    )}
+                    {resolvedGridUser && resolvedGridUser.walletAddress && (
                       <div className="mt-2 p-2 bg-violet-50 rounded-lg border border-violet-200">
                         <p className="text-xs text-violet-700 flex items-center gap-1">
                           <svg
@@ -670,6 +747,42 @@ export default function TransactPage() {
                             <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                           </svg>
                           User found: {resolvedGridUser.email}
+                        </p>
+                      </div>
+                    )}
+                    {resolvedGridUser && !resolvedGridUser.walletAddress && (
+                      <div className="mt-2 p-2 bg-amber-50 rounded-lg border border-amber-200">
+                        <p className="text-xs text-amber-700 flex items-center gap-1">
+                          <svg
+                            className="w-4 h-4"
+                            fill="none"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                          </svg>
+                          User found but hasn&apos;t set up their wallet yet
+                        </p>
+                      </div>
+                    )}
+                    {!isResolvingUser && isUserNotFound && searchUsername.length >= 3 && (
+                      <div className="mt-2 p-2 bg-rose-50 rounded-lg border border-rose-200">
+                        <p className="text-xs text-rose-700 flex items-center gap-1">
+                          <svg
+                            className="w-4 h-4"
+                            fill="none"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                          </svg>
+                          User not found
                         </p>
                       </div>
                     )}
@@ -716,7 +829,7 @@ export default function TransactPage() {
                   {/* Send Button */}
                   <Button
                     onClick={handleGridUserSend}
-                    disabled={transferFunds.isPending || !resolvedGridUser || !gridAmount}
+                    disabled={transferFunds.isPending || !resolvedGridUser || !resolvedGridUser.walletAddress || !gridAmount}
                     className="w-full bg-violet-600 hover:bg-violet-700 text-white py-6 rounded-xl font-semibold"
                   >
                     {transferFunds.isPending ? (
@@ -925,7 +1038,7 @@ export default function TransactPage() {
 
                   <div className="bg-emerald-50 p-3 rounded-xl border border-emerald-100">
                     <p className="text-xs text-emerald-700 text-center">
-                      💡 On-chain transfer using Circle Programmable Wallets SDK
+                      💡 On-chain transfer on Tempo Network
                     </p>
                   </div>
                 </CardContent>
@@ -1069,6 +1182,118 @@ export default function TransactPage() {
           </Tabs>
         </div>
       </div>
+
+      {/* Transfer Receipt Modal */}
+      <Dialog open={showReceipt} onOpenChange={setShowReceipt}>
+        <DialogContent className="rounded-xl max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-emerald-600">
+              <CheckCircle2 className="w-6 h-6" />
+              Transfer Successful!
+            </DialogTitle>
+          </DialogHeader>
+
+          {receipt && (
+            <div className="space-y-4">
+              {/* Amount */}
+              <div className="p-6 bg-gradient-to-br from-emerald-50 to-white rounded-xl border border-emerald-200 text-center">
+                <p className="text-sm text-slate-500 mb-1">Amount Sent</p>
+                <p className="text-4xl font-bold text-emerald-600">
+                  ${receipt.amount.toFixed(2)}
+                </p>
+                <p className="text-sm text-slate-500">USDC</p>
+              </div>
+
+              {/* Recipient */}
+              <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
+                <p className="text-xs text-slate-500 mb-1">Sent to</p>
+                <p className="text-lg font-semibold text-slate-900">
+                  {receipt.recipientDisplay}
+                </p>
+                {receipt.type === "external" && (
+                  <p className="text-xs text-slate-500 font-mono mt-1">
+                    {receipt.recipient}
+                  </p>
+                )}
+              </div>
+
+              {/* Note */}
+              {receipt.note && (
+                <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
+                  <p className="text-xs text-slate-500 mb-1">Note</p>
+                  <p className="text-sm text-slate-900">{receipt.note}</p>
+                </div>
+              )}
+
+              {/* Transaction Details */}
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Reference</span>
+                  <span className="font-mono text-slate-900">
+                    {receipt.txHash.slice(0, 10)}...
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Network</span>
+                  <span className="font-medium text-slate-900">Tempo</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Date</span>
+                  <span className="font-medium text-slate-900">
+                    {receipt.timestamp.toLocaleString()}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Type</span>
+                  <span className="font-medium text-slate-900">
+                    {receipt.type === "grid" ? "Grid User" : "External Wallet"}
+                  </span>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-2 pt-2">
+                <Button
+                  onClick={() => {
+                    const shareText = `Grid Payment Receipt\n\nSent: $${receipt.amount.toFixed(2)} USDC\nTo: ${receipt.recipientDisplay}\n${receipt.note ? `Note: ${receipt.note}\n` : ""}Reference: ${receipt.txHash.slice(0, 16)}...\nNetwork: Tempo\nDate: ${receipt.timestamp.toLocaleString()}\n\nPowered by Grid`;
+
+                    if (navigator.share) {
+                      void navigator.share({
+                        title: "Grid Payment Receipt",
+                        text: shareText,
+                      });
+                    } else {
+                      void navigator.clipboard.writeText(shareText);
+                      toast.success("Receipt copied to clipboard!");
+                    }
+                  }}
+                  variant="outline"
+                  className="flex-1 rounded-xl"
+                >
+                  <Share2 className="w-4 h-4 mr-2" />
+                  Share
+                </Button>
+                <Button
+                  onClick={() => {
+                    void navigator.clipboard.writeText(receipt.txHash);
+                    toast.success("Transaction hash copied!");
+                  }}
+                  variant="outline"
+                  className="rounded-xl"
+                >
+                  <Copy className="w-4 h-4" />
+                </Button>
+                <Button
+                  onClick={() => setShowReceipt(false)}
+                  className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl"
+                >
+                  Done
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Mobile Navigation */}
       <MobileNav />

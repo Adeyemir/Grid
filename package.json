@@ -16,7 +16,6 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@circle-fin/w3s-pw-web-sdk": "^1.1.11",
     "@prisma/client": "^6.6.0",
     "@privy-io/react-auth": "^3.13.1",
     "@radix-ui/react-dialog": "^1.1.15",

@@ -19,59 +19,47 @@ import {
 } from "~/components/ui/dialog";
 import { Input } from "~/components/ui/input";
 import { Skeleton } from "~/components/ui/skeleton";
-import { createClient } from "~/lib/supabase/client";
+import { useGridAuth } from "~/hooks/useGridAuth";
 import { api } from "~/trpc/react";
 import { toast } from "sonner";
 import { MobileNav } from "~/components/MobileNav";
+import { Smartphone, Phone, Zap, Tv, Receipt, Share2 } from "lucide-react";
+
+// Professional icon mapping for bill providers
+const ProviderIcon = ({ providerId, className }: { providerId: string; className?: string }) => {
+  const iconClass = className ?? "w-12 h-12";
+
+  switch (providerId) {
+    case "mtn-data":
+      return <div className={`${iconClass} rounded-xl bg-yellow-100 flex items-center justify-center`}><Smartphone className="w-6 h-6 text-yellow-600" /></div>;
+    case "airtel-airtime":
+      return <div className={`${iconClass} rounded-xl bg-red-100 flex items-center justify-center`}><Phone className="w-6 h-6 text-red-600" /></div>;
+    case "ikeja-electric":
+      return <div className={`${iconClass} rounded-xl bg-amber-100 flex items-center justify-center`}><Zap className="w-6 h-6 text-amber-600" /></div>;
+    case "dstv":
+      return <div className={`${iconClass} rounded-xl bg-blue-100 flex items-center justify-center`}><Tv className="w-6 h-6 text-blue-600" /></div>;
+    default:
+      return <div className={`${iconClass} rounded-xl bg-slate-100 flex items-center justify-center`}><Receipt className="w-6 h-6 text-slate-600" /></div>;
+  }
+};
 
 export default function BillsPage() {
   const router = useRouter();
-  const [user, setUser] = useState<{
-    id: string;
-    email: string;
-    authMethod: string;
-    web3Address?: string;
-  } | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { user, ready, isAuthenticated, walletAddress } = useGridAuth();
   const [selectedProvider, setSelectedProvider] = useState<string | null>(null);
   const [formData, setFormData] = useState<Record<string, string>>({});
   const [showReceipt, setShowReceipt] = useState(false);
   const [receipt, setReceipt] = useState<any>(null);
 
-  // Get user data
+  // Redirect if not authenticated
   useEffect(() => {
-    async function getUser() {
-      const supabase = createClient();
-      const {
-        data: { user: supabaseUser },
-      } = await supabase.auth.getUser();
-
-      if (!supabaseUser) {
-        router.push("/login");
-        return;
-      }
-
-      const authMethod = supabaseUser.user_metadata?.auth_method as
-        | string
-        | undefined;
-      const web3WalletAddress = supabaseUser.user_metadata
-        ?.wallet_address as string | undefined;
-
-      setUser({
-        id: supabaseUser.id,
-        email: supabaseUser.email ?? "",
-        authMethod: authMethod ?? "email",
-        web3Address: web3WalletAddress,
-      });
-      setLoading(false);
+    if (ready && !isAuthenticated) {
+      router.push("/login");
     }
+  }, [ready, isAuthenticated, router]);
 
-    void getUser();
-  }, [router]);
-
-  // Determine wallet address
-  const displayWalletAddress =
-    user?.authMethod === "wallet" ? user.web3Address : undefined;
+  // Use Privy wallet address
+  const displayWalletAddress = walletAddress;
 
   // Fetch providers
   const { data: providersData, isLoading: providersLoading } =
@@ -175,7 +163,7 @@ export default function BillsPage() {
     });
   };
 
-  if (loading) {
+  if (!ready || !isAuthenticated) {
     return (
       <main className="min-h-screen bg-slate-50">
         <div className="container mx-auto px-4 py-16">
@@ -262,7 +250,7 @@ export default function BillsPage() {
                           <p className="font-medium text-slate-900">
                             {tx.description}
                           </p>
-                          <p className="text-xs text-slate-500">
+                          <p className="text-xs text-slate-500" suppressHydrationWarning>
                             {new Date(tx.createdAt).toLocaleString()}
                           </p>
                         </div>
@@ -301,8 +289,8 @@ export default function BillsPage() {
                     onClick={() => handleProviderClick(provider.id)}
                   >
                     <CardHeader>
-                      <div className="flex items-center gap-3">
-                        <span className="text-4xl">{provider.logo}</span>
+                      <div className="flex items-center gap-4">
+                        <ProviderIcon providerId={provider.id} className="w-14 h-14" />
                         <div>
                           <CardTitle className="text-lg text-slate-900">
                             {provider.name}
@@ -333,8 +321,8 @@ export default function BillsPage() {
       >
         <DialogContent className="rounded-xl">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <span className="text-3xl">{selectedProviderData?.logo}</span>
+            <DialogTitle className="flex items-center gap-3">
+              {selectedProviderData && <ProviderIcon providerId={selectedProviderData.id} className="w-12 h-12" />}
               Pay {selectedProviderData?.name}
             </DialogTitle>
             <DialogDescription>
@@ -406,7 +394,7 @@ export default function BillsPage() {
             <div className="space-y-4">
               <div className="p-6 bg-emerald-50 rounded-xl border border-emerald-200 space-y-3">
                 <div className="flex items-center justify-center">
-                  <span className="text-6xl">{receipt.providerLogo}</span>
+                  <ProviderIcon providerId={receipt.providerId} className="w-20 h-20" />
                 </div>
                 <div className="text-center">
                   <p className="text-sm text-slate-500">Paid to</p>
@@ -442,12 +430,35 @@ export default function BillsPage() {
                 </div>
               </div>
 
-              <Button
-                onClick={() => setShowReceipt(false)}
-                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl"
-              >
-                Done
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  onClick={() => {
+                    if (!receipt) return;
+                    const shareText = `Grid Bill Payment Receipt\n\nPaid to: ${receipt.providerName}\nAmount: $${receipt.amount.toFixed(2)} USDC\nReference: ${receipt.reference}\nNetwork: ${receipt.network}\nDate: ${new Date(receipt.timestamp).toLocaleString()}`;
+
+                    if (navigator.share) {
+                      void navigator.share({
+                        title: "Grid Bill Payment Receipt",
+                        text: shareText,
+                      });
+                    } else {
+                      void navigator.clipboard.writeText(shareText);
+                      toast.success("Receipt copied to clipboard!");
+                    }
+                  }}
+                  variant="outline"
+                  className="flex-1 rounded-xl"
+                >
+                  <Share2 className="w-4 h-4 mr-2" />
+                  Share
+                </Button>
+                <Button
+                  onClick={() => setShowReceipt(false)}
+                  className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl"
+                >
+                  Done
+                </Button>
+              </div>
             </div>
           )}
         </DialogContent>

@@ -3,7 +3,7 @@
 **Author:** John (BMad PM)
 **Date:** 2025-12-03
 **Context:** MVP (Testnet Prototype)
-**Tech Stack:** Next.js (T3), Circle WaaS, Supabase, Tailwind/shadcn
+**Tech Stack:** Next.js (T3), Privy, Supabase, Tailwind/shadcn
 
 ---
 
@@ -34,7 +34,7 @@ This breakdown transforms the **Grid** PRD into implementable code. It follows a
 
 * **Acceptance Criteria:**
     * [ ] Supabase project created.
-    * [ ] `users_meta` table created (links Circle Wallet ID to local prefs).
+    * [ ] `users_meta` table created (links Privy Wallet ID to local prefs).
     * [ ] `simulated_assets` table created (columns: user_id, symbol, amount).
     * [ ] `transactions` table created (for merging real/fake history).
     * [ ] Prisma schema updated and pushed to DB.
@@ -53,7 +53,7 @@ This breakdown transforms the **Grid** PRD into implementable code. It follows a
 ---
 
 ## Epic 2: Identity & Wallet (The "Real" Layer)
-**Goal:** Users can sign in and get a real Arc Testnet wallet address.
+**Goal:** Users can sign in and get a real Tempo Testnet wallet address.
 
 ### Story 2.1: Social Login Integration
 **As a** User,
@@ -65,16 +65,16 @@ This breakdown transforms the **Grid** PRD into implementable code. It follows a
     * [ ] Upon success, user is redirected to Dashboard.
     * [ ] A `user_id` is generated and stored in Supabase.
 
-### Story 2.2: Circle Programmable Wallet Creation
+### Story 2.2: Privy Embedded Wallet Creation
 **As a** System,
 **I want** to generate a wallet for the new user,
-**So that** they have an address on Arc Testnet.
+**So that** they have an address on Tempo Testnet.
 
 * **Acceptance Criteria:**
-    * [ ] Background process calls Circle WaaS API on signup.
-    * [ ] A dedicated SCA (Smart Contract Account) or EOA is created.
+    * [ ] Background process creates embedded wallet via Privy on signup.
+    * [ ] A dedicated EOA wallet is created automatically.
     * [ ] The "0x..." address is displayed on the user's profile card.
-    * [ ] **Technical Note:** Handle "Gas Station" configuration so user doesn't need ETH/Gas tokens.
+    * [ ] **Technical Note:** Privy handles gasless transactions seamlessly.
 
 ---
 
@@ -99,7 +99,7 @@ This breakdown transforms the **Grid** PRD into implementable code. It follows a
 
 * **Acceptance Criteria:**
     * [ ] Dashboard shows Total Balance in large, bold Inter font.
-    * [ ] UI polls Circle API (or uses Webhook) to update balance automatically.
+    * [ ] UI polls balance API (or uses tRPC) to update balance automatically.
     * [ ] **UX Note:** When balance increases, trigger a subtle green highlight/flash animation.
 
 ---
@@ -156,7 +156,7 @@ This breakdown transforms the **Grid** PRD into implementable code. It follows a
     * [ ] "Bills" tab shows list of providers (MTN, Airtel, Disco).
     * [ ] User enters Phone Number and Amount.
     * [ ] "Pay" button triggers simulation.
-    * [ ] Success Screen shows a receipt with "Paid via Arc Network."
+    * [ ] Success Screen shows a receipt with "Paid via Tempo Network."
 
 ### Story 5.2: Virtual Card Reveal
 **As a** User,
@@ -171,8 +171,8 @@ This breakdown transforms the **Grid** PRD into implementable code. It follows a
 
 ---
 
-## Epic 6: Privacy & Polish (The "Arc Advantage")
-**Goal:** Leverage the specific Arc feature of configurable privacy.
+## Epic 6: Privacy & Polish
+**Goal:** Provide users with privacy controls and polished UI experience.
 
 ### Story 6.1: The Global Privacy Toggle
 **As a** User,

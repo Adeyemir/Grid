@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "~/components/ui/button";
 import {
@@ -13,28 +13,76 @@ import {
 import { Skeleton } from "~/components/ui/skeleton";
 import { WalletCard } from "~/components/WalletCard";
 import { MobileNav } from "~/components/MobileNav";
-import { createClient } from "~/lib/supabase/client";
-import { useCreateWallet } from "~/hooks/useCreateWallet";
+import { UsernameSetup } from "~/components/UsernameSetup";
+import { useGridAuth } from "~/hooks/useGridAuth";
 import { useWalletBalance } from "~/hooks/useWalletBalance";
 import { usePrivacy } from "~/contexts/PrivacyContext";
 import { api } from "~/trpc/react";
-import { signOut } from "../login/actions";
 import { cn } from "~/lib/utils";
+import {
+  ArrowUpRight,
+  ArrowDownLeft,
+  TrendingUp,
+  Receipt,
+  Wallet,
+  Clock
+} from "lucide-react";
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { isPrivacyMode, togglePrivacy, maskValue } = usePrivacy();
-  const [user, setUser] = useState<{
-    email: string;
-  } | null>(null);
-  const [loading, setLoading] = useState(true);
-  const { walletAddress, isCreating, error } = useCreateWallet();
+  const { isPrivacyMode, togglePrivacy } = usePrivacy();
+  const { user, ready, isAuthenticated, logout, walletAddress } = useGridAuth();
+  const [showUsernameSetup, setShowUsernameSetup] = useState(false);
 
-  // Use the Grid wallet address
+  // Use the Privy wallet address
   const displayWalletAddress = walletAddress;
 
+  // Fetch user profile
+  const { data: profileData, refetch: refetchProfile } = api.user.getProfile.useQuery(
+    { privyUserId: user?.id ?? "" },
+    { enabled: !!user?.id }
+  );
+
+  // Update profile mutation (for fixing missing wallet addresses)
+  const updateProfile = api.user.updateProfile.useMutation({
+    onSuccess: () => {
+      void refetchProfile();
+    }
+  });
+
+  // Ref to track if we've attempted the wallet fix
+  const walletFixAttempted = useRef(false);
+
+  // Check if user needs to set up username
+  // Only show setup when wallet is also ready to ensure walletAddress is captured
+  useEffect(() => {
+    if (ready && isAuthenticated && user?.id && profileData === null && displayWalletAddress) {
+      // User is authenticated, has wallet, but has no profile - show setup
+      setShowUsernameSetup(true);
+    }
+  }, [ready, isAuthenticated, user?.id, profileData, displayWalletAddress]);
+
+  // Auto-fix profiles missing wallet address (only run once per session)
+  useEffect(() => {
+    if (
+      !walletFixAttempted.current &&
+      ready &&
+      isAuthenticated &&
+      user?.id &&
+      profileData &&
+      !profileData.walletAddress &&
+      displayWalletAddress
+    ) {
+      walletFixAttempted.current = true;
+      // Profile exists but missing wallet address - update it
+      updateProfile.mutate({
+        privyUserId: user.id,
+        walletAddress: displayWalletAddress,
+      });
+    }
+  }, [ready, isAuthenticated, user?.id, profileData, displayWalletAddress, updateProfile]);
+
   // Fetch wallet balance with auto-polling
-  // Use displayWalletAddress to support both Circle and Web3 wallets
   const { balance, isLoading: balanceLoading } = useWalletBalance({
     walletAddress: displayWalletAddress ?? null,
     pollingInterval: 3000, // Poll every 3 seconds
@@ -47,39 +95,76 @@ export default function DashboardPage() {
     { enabled: !!displayWalletAddress },
   );
 
+  // Fetch transaction history
+  const { data: transactionsData } = api.wallet.getAllTransactions.useQuery(
+    { walletAddress: displayWalletAddress ?? "", limit: 10, type: "all" },
+    { enabled: !!displayWalletAddress, refetchInterval: 5000 },
+  );
+
   // Calculate Net Worth = Cash (USDC) + Investments
   const netWorth = balance + (portfolioData?.totalCurrentValue ?? 0);
 
-  useEffect(() => {
-    async function getUser() {
-      const supabase = createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (!user) {
-        router.push("/login");
-        return;
-      }
-
-      setUser({
-        email: user.email ?? "",
-      });
-      setLoading(false);
+  // Helper to get transaction icon
+  const getTransactionIcon = (type: string, amount: number) => {
+    switch (type) {
+      case "investment":
+        return amount < 0
+          ? <TrendingUp className="w-4 h-4 text-emerald-600" />
+          : <TrendingUp className="w-4 h-4 text-blue-600" />;
+      case "bill_pay":
+        return <Receipt className="w-4 h-4 text-orange-600" />;
+      case "send":
+        return <ArrowUpRight className="w-4 h-4 text-rose-600" />;
+      case "receive":
+      case "payroll":
+        return <ArrowDownLeft className="w-4 h-4 text-emerald-600" />;
+      default:
+        return <Wallet className="w-4 h-4 text-slate-600" />;
     }
+  };
 
-    void getUser();
-  }, [router]);
+  // Helper to format relative time
+  const formatRelativeTime = (date: Date) => {
+    const now = new Date();
+    const diffMs = now.getTime() - new Date(date).getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
 
-  async function handleSignOut() {
-    await signOut();
+    if (diffMins < 1) return "Just now";
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays < 7) return `${diffDays}d ago`;
+    return new Date(date).toLocaleDateString();
+  };
+
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (ready && !isAuthenticated) {
+      router.push("/login");
+    }
+  }, [ready, isAuthenticated, router]);
+
+  // Get user display info - prioritize profile, then Privy
+  const userEmail = user?.email?.address ?? user?.google?.email ?? user?.twitter?.username ?? "";
+  const profileDisplayName = profileData?.displayName ?? profileData?.username;
+  const fallbackName = user?.google?.name ?? user?.twitter?.username ?? userEmail.split("@")[0];
+  const userName = profileDisplayName ?? fallbackName ?? "USER";
+  const userInitial = userName.charAt(0).toUpperCase();
+
+  // Suggested name for username setup
+  const suggestedName = user?.google?.name ?? user?.twitter?.username ?? userEmail.split("@")[0] ?? "";
+
+  function handleSignOut() {
+    logout();
   }
 
   function copyToClipboard(text: string) {
     void navigator.clipboard.writeText(text);
   }
 
-  if (loading) {
+  // Show loading while Privy initializes or redirecting
+  if (!ready || !isAuthenticated) {
     return (
       <main className="min-h-screen w-full bg-slate-50 overflow-x-hidden">
         <div className="container mx-auto px-4 py-16 max-w-full">
@@ -101,50 +186,13 @@ export default function DashboardPage() {
             <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 truncate">
               <span className="text-emerald-600">Grid</span> Dashboard
             </h1>
-            <div className="flex items-center gap-2 flex-shrink-0">
-              {/* Privacy Toggle (Epic 6: Story 6.1) */}
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={togglePrivacy}
-                className="rounded-xl h-9 w-9 sm:h-10 sm:w-10 flex-shrink-0"
-                title={isPrivacyMode ? "Show balances" : "Hide balances"}
-              >
-                {isPrivacyMode ? (
-                  <svg
-                    className="w-5 h-5 text-slate-600"
-                    fill="none"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"></path>
-                  </svg>
-                ) : (
-                  <svg
-                    className="w-5 h-5 text-slate-600"
-                    fill="none"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                    <path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
-                  </svg>
-                )}
-              </Button>
-              <Button
-                variant="outline"
-                onClick={handleSignOut}
-                className="border-slate-300 hover:bg-slate-50 rounded-lg sm:rounded-xl h-9 sm:h-10 text-xs sm:text-sm px-2 sm:px-4 whitespace-nowrap flex-shrink-0"
-              >
-                Sign Out
-              </Button>
-            </div>
+            <Button
+              variant="outline"
+              onClick={handleSignOut}
+              className="border-slate-300 hover:bg-slate-50 rounded-lg sm:rounded-xl h-9 sm:h-10 text-xs sm:text-sm px-2 sm:px-4 whitespace-nowrap flex-shrink-0"
+            >
+              Sign Out
+            </Button>
           </div>
         </div>
       </div>
@@ -158,63 +206,64 @@ export default function DashboardPage() {
               {/* Avatar */}
               <div className="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-full flex items-center justify-center shadow-lg flex-shrink-0">
                 <span className="text-white text-lg sm:text-xl font-bold">
-                  {user?.email ? user.email.charAt(0).toUpperCase() : "U"}
+                  {userInitial}
                 </span>
               </div>
               {/* Greeting */}
               <div className="min-w-0 flex-1">
                 <h2 className="text-lg sm:text-2xl font-bold text-slate-900 truncate max-w-[180px] sm:max-w-[300px]">
-                  Hi, {user?.email ? user.email.split("@")[0]?.toUpperCase() : "USER"}
+                  Hi, {userName}
                 </h2>
                 <p className="text-xs sm:text-sm text-slate-500 truncate">Welcome back to Grid</p>
               </div>
             </div>
 
-            {/* Actions */}
-            <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
-              {/* Support */}
-              <button className="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded-full hover:bg-slate-100 transition-colors flex-shrink-0">
-                <svg
-                  className="w-5 h-5 sm:w-6 sm:h-6 text-slate-600"
-                  fill="none"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z"></path>
-                </svg>
-              </button>
-
-              {/* Notifications */}
-              <button className="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded-full hover:bg-slate-100 transition-colors relative flex-shrink-0">
-                <svg
-                  className="w-5 h-5 sm:w-6 sm:h-6 text-slate-600"
-                  fill="none"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
-                </svg>
-                <span className="absolute top-0 right-0 w-5 h-5 bg-emerald-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
-                  3
-                </span>
-              </button>
-            </div>
           </div>
 
           {/* Net Worth Card (Epic 4: Shows Cash + Investments) */}
           {portfolioData && portfolioData.assets.length > 0 && (
             <Card className="bg-gradient-to-br from-slate-900 to-slate-800 border-slate-700 rounded-xl shadow-lg text-white w-full max-w-full">
               <CardHeader className="px-4 sm:px-6">
-                <CardTitle className="text-white text-lg sm:text-xl">Total Net Worth</CardTitle>
-                <CardDescription className="text-slate-300 text-sm">
-                  Cash + Investments
-                </CardDescription>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="text-white text-lg sm:text-xl">Total Net Worth</CardTitle>
+                    <CardDescription className="text-slate-300 text-sm">
+                      Cash + Investments
+                    </CardDescription>
+                  </div>
+                  <button
+                    onClick={togglePrivacy}
+                    className="p-2 rounded-lg hover:bg-white/10 transition-colors"
+                    title={isPrivacyMode ? "Show balance" : "Hide balance"}
+                  >
+                    {isPrivacyMode ? (
+                      <svg
+                        className="w-5 h-5 text-slate-300"
+                        fill="none"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"></path>
+                      </svg>
+                    ) : (
+                      <svg
+                        className="w-5 h-5 text-slate-300"
+                        fill="none"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                        <path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                      </svg>
+                    )}
+                  </button>
+                </div>
               </CardHeader>
               <CardContent className="px-4 sm:px-6">
                 <div className={cn(
@@ -254,6 +303,7 @@ export default function DashboardPage() {
             isLoading={balanceLoading}
             currency="USDC"
             isPrivacyMode={isPrivacyMode}
+            onTogglePrivacy={togglePrivacy}
           />
 
 
@@ -361,11 +411,97 @@ export default function DashboardPage() {
             </Card>
 
           </div>
+
+          {/* Transaction History */}
+          <Card className="bg-white border-slate-200 rounded-xl w-full">
+            <CardHeader className="px-4 sm:px-6 pb-2">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base sm:text-lg text-slate-900 flex items-center gap-2">
+                  <Clock className="w-5 h-5 text-slate-500" />
+                  Recent Activity
+                </CardTitle>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => router.push("/transact")}
+                  className="text-emerald-600 hover:text-emerald-700 text-xs"
+                >
+                  View All
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="px-4 sm:px-6">
+              {transactionsData?.transactions && transactionsData.transactions.length > 0 ? (
+                <div className="space-y-1">
+                  {transactionsData.transactions.map((tx) => (
+                    <div
+                      key={tx.id}
+                      className="flex items-center justify-between py-3 border-b border-slate-100 last:border-0"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={cn(
+                          "w-9 h-9 rounded-full flex items-center justify-center",
+                          tx.type === "investment" && tx.amount < 0 && "bg-emerald-100",
+                          tx.type === "investment" && tx.amount >= 0 && "bg-blue-100",
+                          tx.type === "bill_pay" && "bg-orange-100",
+                          tx.type === "send" && "bg-rose-100",
+                          (tx.type === "receive" || tx.type === "payroll") && "bg-emerald-100",
+                          !["investment", "bill_pay", "send", "receive", "payroll"].includes(tx.type) && "bg-slate-100"
+                        )}>
+                          {getTransactionIcon(tx.type, tx.amount)}
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-slate-900">
+                            {tx.description}
+                          </p>
+                          <p className="text-xs text-slate-500" suppressHydrationWarning>
+                            {formatRelativeTime(tx.createdAt)}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className={cn(
+                          "text-sm font-semibold tabular-nums",
+                          isPrivacyMode && "blur-sm",
+                          tx.amount >= 0 ? "text-emerald-600" : "text-slate-900"
+                        )}>
+                          {tx.amount >= 0 ? "+" : ""}${Math.abs(tx.amount).toFixed(2)}
+                        </p>
+                        {tx.symbol && (
+                          <p className="text-xs text-slate-500">{tx.symbol}</p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <Wallet className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+                  <p className="text-sm text-slate-500">No transactions yet</p>
+                  <p className="text-xs text-slate-400 mt-1">
+                    Your activity will appear here
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
       </div>
 
       {/* Mobile Navigation (Epic 6: Story 6.3) */}
       <MobileNav />
+
+      {/* Username Setup Dialog */}
+      <UsernameSetup
+        isOpen={showUsernameSetup}
+        onComplete={(username) => {
+          setShowUsernameSetup(false);
+          void refetchProfile();
+        }}
+        privyUserId={user?.id ?? ""}
+        walletAddress={displayWalletAddress ?? undefined}
+        suggestedName={suggestedName}
+      />
     </main>
   );
 }
