@@ -84,7 +84,7 @@ export function WalletCard({
           <div>
             <CardTitle className="text-slate-900">Total Balance</CardTitle>
             <CardDescription className="text-slate-600">
-              Your {currency} holdings on Tempo Network
+              Your {currency} holdings on Arc Network
             </CardDescription>
           </div>
           {onTogglePrivacy && (

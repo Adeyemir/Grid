@@ -10,10 +10,10 @@ interface TempoState {
 }
 
 /**
- * React hook for Tempo blockchain interactions.
+ * React hook for Arc blockchain interactions.
  *
  * All blockchain calls go through the tRPC router (server-side),
- * where the private key and Tempo client live. This hook manages
+ * where the private key and Arc client live. This hook manages
  * the UI state (loading, success, error, txHash) for each action.
  */
 export function useTempo() {

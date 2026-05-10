@@ -14,7 +14,7 @@ Remote workers and freelancers in emerging markets face three financial barriers
 
 Grid is a single application where users can:
 
-- **Receive** salary and payments in USDC instantly via the Tempo Network
+- **Receive** salary and payments in USDC instantly via the Arc Network
 - **Invest** in simulated stocks, ETFs, and crypto assets (sTSLA, sAAPL, sBTC, etc.)
 - **Spend** directly on local bills (mobile data, electricity, TV subscriptions) without manual currency conversion
 
@@ -23,7 +23,7 @@ All balances remain in USDC until the moment of spending, avoiding currency conv
 ## Features
 
 - Email, Google, and Twitter authentication via Privy
-- Embedded wallet creation on Tempo Network
+- Embedded wallet creation on Arc Network
 - Username-based transfers between Grid users
 - QR code generation for receiving payments
 - Simulated investment portfolio with buy/sell functionality
@@ -41,7 +41,7 @@ All balances remain in USDC until the moment of spending, avoiding currency conv
 | Language | TypeScript |
 | Styling | Tailwind CSS, shadcn/ui |
 | Authentication | Privy |
-| Blockchain | Tempo Network (testnet) |
+| Blockchain | Arc Network (testnet) |
 | Database | PostgreSQL via Supabase |
 | ORM | Prisma |
 | API | tRPC |
@@ -64,7 +64,7 @@ src/
 ├── contexts/             # React contexts (Privacy)
 ├── hooks/                # Custom React hooks
 ├── lib/                  # Utilities and providers
-│   ├── tempo/           # Tempo blockchain client
+│   ├── tempo/           # Arc blockchain client
 │   └── wallet/          # Wallet provider
 └── server/
     └── api/
@@ -117,7 +117,7 @@ The application will be available at `http://localhost:3000`.
 | `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anonymous key |
 | `NEXT_PUBLIC_PRIVY_APP_ID` | Privy application ID |
-| `NEXT_PUBLIC_TEMPO_PRIVATE_KEY` | Tempo testnet private key |
+| `NEXT_PUBLIC_TEMPO_PRIVATE_KEY` | Arc testnet private key |
 | `NEXT_PUBLIC_SITE_URL` | Application URL (for OAuth callbacks) |
 
 ## Scripts
@@ -138,7 +138,7 @@ The application will be available at `http://localhost:3000`.
 
 Grid uses a hybrid architecture:
 
-- **Real transactions**: USDC transfers between wallets occur on the Tempo testnet
+- **Real transactions**: USDC transfers between wallets occur on the Arc testnet
 - **Simulated features**: Stock investments and bill payments are recorded in the database but do not interact with real external APIs
 
 This allows the application to demonstrate the full user experience while operating on testnet infrastructure.

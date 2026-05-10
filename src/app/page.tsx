@@ -28,7 +28,7 @@ export default function Home() {
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-slate-600">
-                  Get paid in USDC on Tempo Network. No more 5-10% wire fees or waiting days for your money.
+                  Get paid in USDC on Arc Network. No more 5-10% wire fees or waiting days for your money.
                 </p>
               </CardContent>
             </Card>
@@ -65,19 +65,19 @@ export default function Home() {
           {/* CTA Section */}
           <div className="flex flex-col gap-4 mt-12 items-center">
             <div className="flex gap-4">
-              <Link href="/login">
-                <Button className="bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-6 text-lg rounded-xl">
+              <Button asChild className="bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-6 text-lg rounded-xl">
+                <Link href="/login">
                   Get Started
-                </Button>
-              </Link>
-              <Link href="/dashboard">
-                <Button variant="outline" className="border-emerald-600 text-emerald-600 hover:bg-emerald-50 px-8 py-6 text-lg rounded-xl">
+                </Link>
+              </Button>
+              <Button asChild variant="outline" className="border-emerald-600 text-emerald-600 hover:bg-emerald-50 px-8 py-6 text-lg rounded-xl">
+                <Link href="/dashboard">
                   View Dashboard
-                </Button>
-              </Link>
+                </Link>
+              </Button>
             </div>
             <p className="text-sm text-slate-500 mt-4">
-              Built on Tempo Network · Powered by Privy
+              Built on Arc Network · Powered by Privy
             </p>
           </div>
 

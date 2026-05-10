@@ -11,14 +11,14 @@ import { tempoActions } from "viem/tempo";
 import { ALPHA_USD_TOKEN } from "./constants";
 
 /**
- * Creates a configured Tempo client using the provided private key.
+ * Creates a configured Arc client using the provided private key.
  *
  * The client is extended with:
  * - publicActions (readContract, getBlock, etc.)
  * - walletActions (sendTransaction, signMessage, etc.)
  * - tempoActions (token.*, faucet.*, dex.*, etc.)
  *
- * The chain defaults to `tempoModerato` (Tempo testnet) with Alpha USD
+ * The chain defaults to `tempoModerato` (Arc testnet) with Alpha USD
  * as the default fee token.
  */
 export function createTempoClient(privateKey: `0x${string}`) {

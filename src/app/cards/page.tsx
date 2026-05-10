@@ -202,7 +202,7 @@ export default function CardsPage() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-500">Network</span>
-                  <span className="font-medium text-slate-900">Tempo Testnet</span>
+                  <span className="font-medium text-slate-900">Arc Testnet</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-500">Status</span>

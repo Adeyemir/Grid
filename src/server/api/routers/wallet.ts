@@ -32,7 +32,7 @@ export const walletRouter = createTRPCRouter({
   getBalance: publicProcedure
     .input(z.object({ walletAddress: z.string() }))
     .query(async ({ input }) => {
-      // In production, this would query the Tempo blockchain
+      // In production, this would query the Arc blockchain
       const balance = balanceStore.get(input.walletAddress);
 
       return {
@@ -46,7 +46,7 @@ export const walletRouter = createTRPCRouter({
    * Simulate receiving a paycheck (Faucet)
    * In production, this would:
    * 1. Transfer USDC from Treasury wallet to user wallet
-   * 2. Return the transaction hash from Tempo Network
+   * 2. Return the transaction hash from Arc Network
    */
   simulatePayroll: publicProcedure
     .input(
@@ -218,7 +218,7 @@ export const walletRouter = createTRPCRouter({
 
   /**
    * Transfer USDC to another wallet
-   * In production, this would execute a transfer on Tempo Network
+   * In production, this would execute a transfer on Arc Network
    */
   transferFunds: publicProcedure
     .input(

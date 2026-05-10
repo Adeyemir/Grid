@@ -1,11 +1,11 @@
 /**
- * Tempo blockchain constants for Grid
+ * Arc blockchain constants for Grid
  *
- * Alpha USD is Tempo's testnet stablecoin, serving as the USDC equivalent.
+ * Alpha USD is Arc's testnet stablecoin, serving as the USDC equivalent.
  * It uses 6 decimals, matching real USDC.
  */
 
-/** Alpha USD token address on Tempo testnet */
+/** Alpha USD token address on Arc testnet */
 export const ALPHA_USD_TOKEN =
   "0x20c0000000000000000000000000000000000001" as const;
 

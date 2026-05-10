@@ -53,7 +53,7 @@ This breakdown transforms the **Grid** PRD into implementable code. It follows a
 ---
 
 ## Epic 2: Identity & Wallet (The "Real" Layer)
-**Goal:** Users can sign in and get a real Tempo Testnet wallet address.
+**Goal:** Users can sign in and get a real Arc Testnet wallet address.
 
 ### Story 2.1: Social Login Integration
 **As a** User,
@@ -68,7 +68,7 @@ This breakdown transforms the **Grid** PRD into implementable code. It follows a
 ### Story 2.2: Privy Embedded Wallet Creation
 **As a** System,
 **I want** to generate a wallet for the new user,
-**So that** they have an address on Tempo Testnet.
+**So that** they have an address on Arc Testnet.
 
 * **Acceptance Criteria:**
     * [ ] Background process creates embedded wallet via Privy on signup.
@@ -156,7 +156,7 @@ This breakdown transforms the **Grid** PRD into implementable code. It follows a
     * [ ] "Bills" tab shows list of providers (MTN, Airtel, Disco).
     * [ ] User enters Phone Number and Amount.
     * [ ] "Pay" button triggers simulation.
-    * [ ] Success Screen shows a receipt with "Paid via Tempo Network."
+    * [ ] Success Screen shows a receipt with "Paid via Arc Network."
 
 ### Story 5.2: Virtual Card Reveal
 **As a** User,

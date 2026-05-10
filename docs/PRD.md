@@ -8,7 +8,7 @@
 
 ## Executive Summary
 
-**Grid** is a financial super-app built on the **Tempo** network that replaces the traditional bank account for global gig workers and freelancers. While competitors focus on merely *moving* money (payroll), Grid focuses on *keeping and growing* it.
+**Grid** is a financial super-app built on the **Arc** network that replaces the traditional bank account for global gig workers and freelancers. While competitors focus on merely *moving* money (payroll), Grid focuses on *keeping and growing* it.
 
 The core value proposition is **"The Income Operating System"**:
 1.  **Earn:** Receive stablecoin payroll instantly with near-zero fees.
@@ -29,7 +29,7 @@ The **"No-Off-Ramp" Ecosystem**. Users can live their financial lives entirely i
 
 ### Domain Context
 
-**Stablecoin-Native Finance:** The product relies on the stability of USDC and the low-cost infrastructure of Tempo to make micro-transactions (like buying coffee or paying a $5 bill) economically viable, which is impossible on Ethereum L1 or via SWIFT.
+**Stablecoin-Native Finance:** The product relies on the stability of USDC and the low-cost infrastructure of Arc to make micro-transactions (like buying coffee or paying a $5 bill) economically viable, which is impossible on Ethereum L1 or via SWIFT.
 
 ---
 
@@ -45,7 +45,7 @@ The **"No-Off-Ramp" Ecosystem**. Users can live their financial lives entirely i
 
 ### MVP - Minimum Viable Product (Testnet Prototype)
 
-* **Identity:** Functional sign-up (Email/Social/Wallet) via Privy creating an embedded wallet on Tempo Testnet.
+* **Identity:** Functional sign-up (Email/Social/Wallet) via Privy creating an embedded wallet on Arc Testnet.
 * **The "Paycheck":** Users can trigger a "Simulate Paycheck" action (Faucet) to instantly receive Testnet USDC.
 * **Wallet Basics:** Sending/Receiving testnet USDC between Grid wallets works on-chain.
 * **Grid Usernames:** Users can set custom usernames for easy peer-to-peer transfers.
@@ -69,7 +69,7 @@ The **"No-Off-Ramp" Ecosystem**. Users can live their financial lives entirely i
 ## Functional Requirements
 
 ### User Access & Identity
-* **FR1:** Users can create a Grid account using social login (Google/Twitter/Email) or wallet connection via Privy, which generates an embedded Tempo wallet.
+* **FR1:** Users can create a Grid account using social login (Google/Twitter/Email) or wallet connection via Privy, which generates an embedded Arc wallet.
 * **FR2:** Users can set a custom Grid username for easy peer-to-peer transfers.
 * **FR3:** Users can view their total "Net Worth" dashboard aggregating USDC balance and investment values.
 
@@ -106,4 +106,4 @@ The **"No-Off-Ramp" Ecosystem**. Users can live their financial lives entirely i
 
 ---
 
-_This PRD captures the essence of Grid - A friction-free, instant payroll wallet built on Tempo that treats stablecoins like cash, not crypto._
+_This PRD captures the essence of Grid - A friction-free, instant payroll wallet built on Arc that treats stablecoins like cash, not crypto._

@@ -498,7 +498,7 @@ export default function TransactPage() {
                     <div className="flex items-center justify-between py-2 border-b border-slate-100">
                       <span className="text-sm text-slate-500">Bank Name</span>
                       <span className="text-sm font-semibold text-slate-900">
-                        Tempo Bank (Virtual)
+                        Arc Bank (Virtual)
                       </span>
                     </div>
                     <div className="flex items-center justify-between py-2 border-b border-slate-100">
@@ -1038,7 +1038,7 @@ export default function TransactPage() {
 
                   <div className="bg-emerald-50 p-3 rounded-xl border border-emerald-100">
                     <p className="text-xs text-emerald-700 text-center">
-                      💡 On-chain transfer on Tempo Network
+                      💡 On-chain transfer on Arc Network
                     </p>
                   </div>
                 </CardContent>
@@ -1235,7 +1235,7 @@ export default function TransactPage() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-500">Network</span>
-                  <span className="font-medium text-slate-900">Tempo</span>
+                  <span className="font-medium text-slate-900">Arc</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-500">Date</span>
@@ -1255,7 +1255,7 @@ export default function TransactPage() {
               <div className="flex gap-2 pt-2">
                 <Button
                   onClick={() => {
-                    const shareText = `Grid Payment Receipt\n\nSent: $${receipt.amount.toFixed(2)} USDC\nTo: ${receipt.recipientDisplay}\n${receipt.note ? `Note: ${receipt.note}\n` : ""}Reference: ${receipt.txHash.slice(0, 16)}...\nNetwork: Tempo\nDate: ${receipt.timestamp.toLocaleString()}\n\nPowered by Grid`;
+                    const shareText = `Grid Payment Receipt\n\nSent: $${receipt.amount.toFixed(2)} USDC\nTo: ${receipt.recipientDisplay}\n${receipt.note ? `Note: ${receipt.note}\n` : ""}Reference: ${receipt.txHash.slice(0, 16)}...\nNetwork: Arc\nDate: ${receipt.timestamp.toLocaleString()}\n\nPowered by Grid`;
 
                     if (navigator.share) {
                       void navigator.share({

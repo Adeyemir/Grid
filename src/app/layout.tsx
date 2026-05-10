@@ -11,7 +11,7 @@ import { PrivacyProvider } from "~/contexts/PrivacyContext";
 
 export const metadata: Metadata = {
   title: "Grid - The Income Operating System",
-  description: "Earn, grow, and spend stablecoins instantly on Tempo Network",
+  description: "Earn, grow, and spend stablecoins instantly on Arc Network",
   icons: [{ rel: "icon", url: "/favicon.ico" }],
 };
 

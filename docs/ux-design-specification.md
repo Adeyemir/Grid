@@ -11,7 +11,7 @@
 
 **Grid** is the "Income Operating System" for the global workforce. The user experience is defined by **speed, transparency, and liquidity**.
 
-Unlike traditional banking apps (cluttered, slow, punitive), Grid feels **light, instant, and empowering**. The interface hides the complexity of blockchain (Tempo) and DeFi behind a familiar, "Neo-Bank" aesthetic.
+Unlike traditional banking apps (cluttered, slow, punitive), Grid feels **light, instant, and empowering**. The interface hides the complexity of blockchain (Arc) and DeFi behind a familiar, "Neo-Bank" aesthetic.
 
 **Core Design Philosophy:** "Invisible Infrastructure." The user should never feel the "crypto" friction; they should only feel the financial freedom.
 

@@ -224,7 +224,7 @@ export const investRouter = createTRPCRouter({
           shares: amountOfAsset,
           pricePerShare: assetPrice,
           totalCost: input.usdcAmount,
-          network: "Tempo Network",
+          network: "Arc Network",
           timestamp: new Date().toISOString(),
         },
       };
@@ -341,7 +341,7 @@ export const investRouter = createTRPCRouter({
           totalProceeds: saleProceeds,
           costBasis,
           profitLoss,
-          network: "Tempo Network",
+          network: "Arc Network",
           timestamp: new Date().toISOString(),
         },
       };
